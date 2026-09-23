@@ -46,18 +46,22 @@ export const newMatch = action(() => {
   pending.push("new-match");
 }, "newMatch");
 
-function show<State>(target: Atom<State>, value: State): void {
-  if (!Object.is(target(), value)) {
+function samePoint(left: Match["ball"], right: Match["ball"]): boolean {
+  return left.x === right.x && left.y === right.y;
+}
+
+function show<State>(
+  target: Atom<State>,
+  value: State,
+  same: (left: State, right: State) => boolean = Object.is,
+): void {
+  if (!same(target(), value)) {
     target.set(value);
   }
 }
 
 function publish(next: Match): void {
-  const shown = ballAtom();
-
-  if (shown.x !== next.ball.x || shown.y !== next.ball.y) {
-    ballAtom.set(next.ball);
-  }
+  show(ballAtom, next.ball, samePoint);
   show(paddleAtom, next.paddle);
   show(scoreAtom, next.score);
   show(livesAtom, next.lives);

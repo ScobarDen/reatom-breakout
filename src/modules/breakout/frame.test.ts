@@ -133,6 +133,17 @@ describe("the batch", () => {
     expect(breakout.situation()).toBe("serve");
   });
 
+  test("plays an event in one frame only", async () => {
+    const breakout = await freshBreakout();
+
+    breakout.newMatch();
+    breakout.advance(16);
+    breakout.launch();
+    breakout.advance(16);
+
+    expect(breakout.situation()).toBe("flight");
+  });
+
   test("puts an event raised by a subscriber into the next frame", async () => {
     const breakout = await freshBreakout();
 
@@ -232,7 +243,7 @@ describe("the picture diff", () => {
     expect(bricks()).toEqual(fallen);
   });
 
-  test("the tick never writes the paddle direction", async () => {
+  test("keeps the held paddle direction across ticks", async () => {
     const breakout = await freshBreakout();
 
     breakout.paddleDirection.set("left");

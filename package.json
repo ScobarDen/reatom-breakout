@@ -6,6 +6,9 @@
   "scripts": {
     "boundaries": "feod-analyzer analyze --fail-on warning"
   },
+  "dependencies": {
+    "@reatom/core": "1001.3.0"
+  },
   "devDependencies": {
     "@feod/analyzer": "0.1.1",
     "@stylistic/eslint-plugin": "5.10.0",

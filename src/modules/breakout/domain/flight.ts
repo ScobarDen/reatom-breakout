@@ -42,6 +42,7 @@ function timeTo(target: number, from: number, speed: number): number {
 
 function wallContacts({ position, velocity }: Ball): Contact[] {
   const contacts: Contact[] = [];
+
   if (velocity.x < 0) {
     contacts.push({ at: timeTo(ballRadius, position.x, velocity.x), flipX: true, flipY: false });
   }
@@ -63,6 +64,7 @@ function wallContacts({ position, velocity }: Ball): Contact[] {
       bottom: true,
     });
   }
+
   return contacts;
 }
 
@@ -91,6 +93,7 @@ function axisSweep(
   }
   const toMin = (min - from) / speed;
   const toMax = (max - from) / speed;
+
   return [Math.min(toMin, toMax), Math.max(toMin, toMax)];
 }
 
@@ -107,6 +110,7 @@ function sweepInto({ position, velocity }: Ball, box: Box): Sweep {
     box.top - ballRadius,
     box.bottom + ballRadius,
   );
+
   return { enter: Math.max(enterX, enterY), exit: Math.min(exitX, exitY), enterX, enterY };
 }
 
@@ -117,9 +121,11 @@ function brickContact(ball: Ball, column: number, row: number): Contact | undefi
     top: row * cellHeight,
     bottom: (row + 1) * cellHeight,
   });
+
   if (enter < 0 || enter >= exit) {
     return undefined;
   }
+
   return { at: enter, flipX: enterX >= enterY, flipY: enterY >= enterX, brick: [column, row] };
 }
 
@@ -127,6 +133,7 @@ function brickContacts(ball: Ball, bricks: Bricks): Contact[] {
   return bricks.flatMap((cells, column) =>
     cells.flatMap((standing, row) => {
       const contact = standing ? brickContact(ball, column, row) : undefined;
+
       return contact ? [contact] : [];
     }),
   );
@@ -142,9 +149,11 @@ function paddleContact(ball: Ball, paddle: number): Contact[] {
     top: paddleY - paddleHeight / 2,
     bottom: paddleY + paddleHeight / 2,
   });
+
   if (enter >= exit || exit <= 0) {
     return [];
   }
+
   return [{ at: Math.max(0, enter), flipX: false, flipY: false, paddle: true }];
 }
 
@@ -153,6 +162,7 @@ function paddleBounce({ position, velocity }: Ball, paddle: number): Vector {
   const offset = Math.min(Math.max((position.x - paddle) / reach, -1), 1);
   const angle = offset * maxPaddleBounceAngle;
   const speed = Math.hypot(velocity.x, velocity.y);
+
   return { x: speed * Math.sin(angle), y: -speed * Math.cos(angle) };
 }
 
@@ -185,6 +195,7 @@ export function fly(start: Ball, startBricks: Bricks, paddle: number, elapsedMs:
 
   for (;;) {
     const contacts = contactsWithin(ball, bricks, paddle, remaining);
+
     if (contacts.length === 0) {
       return {
         ball: { ...ball, position: travel(ball.position, ball.velocity, remaining) },
@@ -200,6 +211,7 @@ export function fly(start: Ball, startBricks: Bricks, paddle: number, elapsedMs:
     const flipY = touching.some((contact) => contact.flipY);
 
     const position = travel(ball.position, ball.velocity, first);
+
     ball = {
       position,
       velocity: touching.some((contact) => contact.paddle)

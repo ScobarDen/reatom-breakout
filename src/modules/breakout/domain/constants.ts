@@ -13,6 +13,7 @@ export const startingLives = 3;
 export const paddleSpeed = 0.4;
 export const ballSpeed = 0.3;
 const launchSlope = 0.3;
+
 export const launchVelocity = {
   x: (ballSpeed * launchSlope) / Math.hypot(launchSlope, 1),
   y: -ballSpeed / Math.hypot(launchSlope, 1),

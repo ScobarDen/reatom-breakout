@@ -17,6 +17,7 @@ const directionSign: Record<PaddleDirection, number> = { left: -1, right: 1, non
 
 function movePaddle(paddle: number, direction: PaddleDirection, elapsedMs: number): number {
   const moved = paddle + directionSign[direction] * paddleSpeed * elapsedMs;
+
   return Math.min(Math.max(moved, paddleWidth / 2), boardWidth - paddleWidth / 2);
 }
 
@@ -39,10 +40,12 @@ function playFlight(match: Airborne, paddle: number, elapsedMs: number): Match {
   }
   if (flown.ending === "bottom") {
     const lives = match.lives - 1;
+
     return lives === 0
       ? { ...common, lives, situation: "lost", ball: flown.ball.position }
       : { ...common, lives, situation: "serve", ball: servedBall(paddle) };
   }
+
   return {
     ...common,
     situation: "flight",
@@ -53,6 +56,7 @@ function playFlight(match: Airborne, paddle: number, elapsedMs: number): Match {
 
 function togglePause(match: Match, events: readonly MatchEvent[]): Match {
   const resuming = events.includes("resume");
+
   if (!resuming && !events.includes("pause")) {
     return match;
   }
@@ -71,6 +75,7 @@ function togglePause(match: Match, events: readonly MatchEvent[]): Match {
       break;
     }
   }
+
   return match;
 }
 
@@ -83,6 +88,7 @@ export function step(match: Match, frame: Frame): Match {
   }
 
   const live = togglePause(match, frame.events);
+
   if (live.situation === "paused-serve" || live.situation === "paused-flight") {
     return live;
   }
@@ -94,8 +100,10 @@ export function step(match: Match, frame: Frame): Match {
   }
 
   const served: Match = { ...live, paddle, ball: servedBall(paddle) };
+
   if (frame.events.includes("launch")) {
     return { ...served, situation: "flight", velocity: launchVelocity };
   }
+
   return served;
 }

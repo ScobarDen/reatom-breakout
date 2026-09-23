@@ -12,7 +12,10 @@ export default defineConfig({
       style: "error",
       suspicious: "error",
     },
-    jsPlugins: [{ name: "vite-plus", specifier: "vite-plus/oxlint-plugin" }],
+    jsPlugins: [
+      { name: "vite-plus", specifier: "vite-plus/oxlint-plugin" },
+      { name: "@stylistic", specifier: "@stylistic/eslint-plugin" },
+    ],
     options: { denyWarnings: true, typeAware: true, typeCheck: true },
     overrides: [
       {
@@ -55,6 +58,14 @@ export default defineConfig({
       },
     ],
     rules: {
+      "@stylistic/padding-line-between-statements": [
+        "error",
+        { blankLine: "always", prev: "*", next: "return" },
+        { blankLine: "always", prev: ["const", "let"], next: "*" },
+        { blankLine: "any", prev: ["const", "let"], next: ["const", "let"] },
+        { blankLine: "always", prev: "*", next: "function" },
+        { blankLine: "always", prev: "function", next: "*" },
+      ],
       "func-style": "off",
       "id-length": ["error", { exceptions: ["x", "y"] }],
       "max-lines": "off",

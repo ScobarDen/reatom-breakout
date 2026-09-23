@@ -8,6 +8,7 @@
   },
   "devDependencies": {
     "@feod/analyzer": "0.1.1",
+    "@stylistic/eslint-plugin": "5.10.0",
     "vite": "catalog:",
     "vite-plus": "catalog:"
   },

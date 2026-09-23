@@ -37,6 +37,7 @@ export function servedBall(paddle: number): Vector {
 
 export function openingMatch(): Match {
   const paddle = boardWidth / 2;
+
   return {
     situation: "serve",
     bricks: Array.from({ length: columns }, () =>

@@ -30,9 +30,11 @@ function frame(overrides: Partial<Frame> = {}): Frame {
 
 function stepFrames(match: Match, frames: number, overrides: Partial<Frame> = {}): Match {
   let next = match;
+
   for (let played = 0; played < frames; played++) {
     next = step(next, frame(overrides));
   }
+
   return next;
 }
 
@@ -100,6 +102,7 @@ function heading(from: Match, to: Match): { x: number; y: number } {
   const dx = to.ball.x - from.ball.x;
   const dy = to.ball.y - from.ball.y;
   const length = Math.hypot(dx, dy);
+
   return { x: dx / length, y: dy / length };
 }
 
@@ -130,6 +133,7 @@ describe("launch", () => {
     const reference = heading(fromCenter, step(fromCenter, frame()));
     const leftWallHeading = heading(fromLeftWall, step(fromLeftWall, frame()));
     const movingRightHeading = heading(movingRight, step(movingRight, frame()));
+
     expect(leftWallHeading.x).toBeCloseTo(reference.x);
     expect(leftWallHeading.y).toBeCloseTo(reference.y);
     expect(movingRightHeading.x).toBeCloseTo(reference.x);
@@ -309,6 +313,7 @@ describe("bricks", () => {
 
 function speedAfter(match: Match): number {
   const later = step(match, frame({ elapsedMs: 10 }));
+
   return Math.hypot(later.ball.x - match.ball.x, later.ball.y - match.ball.y) / 10;
 }
 
@@ -316,6 +321,7 @@ const straightDown = { x: 0, y: 0.1 };
 
 function bounceOffPaddle(contactX: number, velocity = straightDown): Match {
   const paddleTop = paddleY - paddleHeight / 2 - ballRadius;
+
   return step(
     flight({ x: contactX - velocity.x * 100, y: paddleTop - velocity.y * 100 }, velocity, {
       paddle: 200,

@@ -8,8 +8,8 @@ import {
   paddleWidth,
   paddleY,
   rows,
-} from "./constants.ts";
-import type { Bricks, Vector } from "./match.ts";
+} from "../breakout.config.ts";
+import type { Bricks, Vector } from "./match.model.ts";
 
 interface Ball {
   readonly position: Vector;

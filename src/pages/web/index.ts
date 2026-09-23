@@ -1,1 +1,1 @@
-export { BreakoutScreen } from "./breakout-screen.tsx";
+export { BreakoutScreen } from "./breakout.web.view.tsx";

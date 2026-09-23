@@ -1,6 +1,12 @@
-import { boardWidth, brickPoints, launchVelocity, paddleSpeed, paddleWidth } from "./constants.ts";
-import { fly } from "./flight.ts";
-import { type Match, openingMatch, servedBall } from "./match.ts";
+import {
+  boardWidth,
+  brickPoints,
+  launchVelocity,
+  paddleSpeed,
+  paddleWidth,
+} from "../breakout.config.ts";
+import { fly } from "./flight.model.ts";
+import { type Match, openingMatch, servedBall } from "./match.model.ts";
 
 type PaddleDirection = "left" | "right" | "none";
 type MatchEvent = "launch" | "pause" | "resume" | "new-match";

@@ -7,9 +7,9 @@ import {
   paddleWidth,
   paddleY,
   rows,
-} from "./constants.ts";
-import { type Match, openingMatch } from "./match.ts";
-import { step } from "./step.ts";
+} from "../breakout.config.ts";
+import { type Match, openingMatch } from "./match.model.ts";
+import { step } from "./step.model.ts";
 
 const cellWidth = boardWidth / columns;
 const cellHeight = boardHeight / rows;

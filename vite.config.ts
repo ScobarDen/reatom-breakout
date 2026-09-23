@@ -19,7 +19,7 @@ export default defineConfig({
     options: { denyWarnings: true, typeAware: true, typeCheck: true },
     overrides: [
       {
-        files: ["src/modules/breakout/domain/**"],
+        files: ["src/modules/breakout/**/*.{model,config}.ts"],
         rules: {
           "no-restricted-imports": [
             "error",

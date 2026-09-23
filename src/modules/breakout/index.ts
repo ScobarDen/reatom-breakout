@@ -7,7 +7,7 @@ export {
   paddleWidth,
   paddleY,
   rows,
-} from "./domain";
+} from "./breakout.config.ts";
 export {
   advance,
   ball,
@@ -21,4 +21,4 @@ export {
   resume,
   score,
   situation,
-} from "./view-model.ts";
+} from "./vm/breakout.vm.ts";

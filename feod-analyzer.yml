@@ -1,6 +1,7 @@
 aliases:
   "@": src
 levels: [app, pages, modules, common, global]
+segments: [model, vm, view, api, dto, lib, config, types]
 submodules:
   enabled: true
   maxDepth: 2

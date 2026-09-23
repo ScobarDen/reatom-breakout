@@ -8,7 +8,7 @@ import {
   paddleY,
   rows,
   startingLives,
-} from "./constants.ts";
+} from "../breakout.config.ts";
 
 export interface Vector {
   readonly x: number;

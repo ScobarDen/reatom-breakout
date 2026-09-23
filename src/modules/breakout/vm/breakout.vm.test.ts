@@ -1,7 +1,8 @@
 import { type Computed, context, sleep } from "@reatom/core";
 
-import { columns, openingMatch, paddleWidth, rows } from "./domain";
-import type * as ViewModel from "./view-model.ts";
+import { columns, paddleWidth, rows } from "../breakout.config.ts";
+import { openingMatch } from "../model/match.model.ts";
+import type * as ViewModel from "./breakout.vm.ts";
 
 type Breakout = typeof ViewModel;
 type Spy = ReturnType<typeof vi.fn>;
@@ -14,7 +15,7 @@ function freshBreakout(): Promise<Breakout> {
   context.reset();
   vi.resetModules();
 
-  return import("./view-model.ts");
+  return import("./breakout.vm.ts");
 }
 
 function brickPicture(breakout: Breakout): boolean[][] {
@@ -51,7 +52,7 @@ function playUntilScore(breakout: Breakout): void {
 
 describe("the public surface", () => {
   test("exposes the picture, the input and the tick, and no match", async () => {
-    const breakout = await import("./index.ts");
+    const breakout = await import("../index.ts");
 
     expect(Object.keys(breakout).toSorted()).toEqual([
       "advance",

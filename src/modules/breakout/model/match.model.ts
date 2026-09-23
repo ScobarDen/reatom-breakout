@@ -31,6 +31,8 @@ export type Match = MatchCommon &
     | { readonly situation: "flight" | "paused-flight"; readonly velocity: Vector }
   );
 
+export type Situation = Match["situation"];
+
 export function servedBall(paddle: number): Vector {
   return { x: paddle, y: paddleY - paddleHeight / 2 - ballRadius };
 }

@@ -1,4 +1,6 @@
 import {
+  type PaddleDirection,
+  type Situation,
   ball,
   ballRadius,
   boardHeight,
@@ -20,8 +22,7 @@ import {
   situation,
 } from "@/modules/breakout";
 
-type Situation = ReturnType<typeof situation>;
-type HeldDirection = Exclude<ReturnType<typeof paddleDirection>, "none">;
+type HeldDirection = Exclude<PaddleDirection, "none">;
 
 const scale = 2;
 const brickWidth = boardWidth / columns;

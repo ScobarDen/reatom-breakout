@@ -9,7 +9,7 @@ import {
   rows,
 } from "../breakout.config.ts";
 import { type Match, openingMatch } from "./match.model.ts";
-import { step } from "./step.model.ts";
+import { type Frame, step } from "./step.model.ts";
 
 const cellWidth = boardWidth / columns;
 const cellHeight = boardHeight / rows;
@@ -20,8 +20,6 @@ function standingCells(match: Match): [number, number][] {
     cells.flatMap((standing, row): [number, number][] => (standing ? [[column, row]] : [])),
   );
 }
-
-type Frame = Parameters<typeof step>[1];
 
 function frame(overrides: Partial<Frame> = {}): Frame {
   return { direction: "none", events: [], elapsedMs: 16, ...overrides };

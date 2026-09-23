@@ -1,11 +1,8 @@
 import { type Atom, type Computed, action, atom, reatomEnum } from "@reatom/core";
 
 import { columns, rows } from "../breakout.config.ts";
-import { type Match, openingMatch } from "../model/match.model.ts";
-import { step } from "../model/step.model.ts";
-
-type Frame = Parameters<typeof step>[1];
-type MatchEvent = Frame["events"][number];
+import { type Match, type Situation, openingMatch } from "../model/match.model.ts";
+import { type MatchEvent, type PaddleDirection, step } from "../model/step.model.ts";
 
 const maxElapsedMs = 100;
 
@@ -27,13 +24,13 @@ export const ball: Computed<Match["ball"]> = ballAtom;
 export const paddle: Computed<number> = paddleAtom;
 export const score: Computed<number> = scoreAtom;
 export const lives: Computed<number> = livesAtom;
-export const situation: Computed<Match["situation"]> = situationAtom;
+export const situation: Computed<Situation> = situationAtom;
 
 export function brickAt(column: number, row: number): Computed<boolean> {
   return brickAtoms[column][row];
 }
 
-const directions = ["none", "left", "right"] as const satisfies readonly Frame["direction"][];
+const directions = ["none", "left", "right"] as const satisfies readonly PaddleDirection[];
 
 export const paddleDirection = reatomEnum(directions, "paddleDirection");
 

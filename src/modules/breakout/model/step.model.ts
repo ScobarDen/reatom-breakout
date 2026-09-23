@@ -8,10 +8,10 @@ import {
 import { fly } from "./flight.model.ts";
 import { type Match, openingMatch, servedBall } from "./match.model.ts";
 
-type PaddleDirection = "left" | "right" | "none";
-type MatchEvent = "launch" | "pause" | "resume" | "new-match";
+export type PaddleDirection = "left" | "right" | "none";
+export type MatchEvent = "launch" | "pause" | "resume" | "new-match";
 
-interface Frame {
+export interface Frame {
   readonly direction: PaddleDirection;
   readonly events: readonly MatchEvent[];
   readonly elapsedMs: number;

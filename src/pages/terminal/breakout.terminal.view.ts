@@ -8,6 +8,8 @@ import {
 } from "@opentui/core";
 
 import {
+  type PaddleDirection,
+  type Situation,
   ball,
   boardHeight,
   boardWidth,
@@ -28,8 +30,7 @@ import {
   situation,
 } from "@/modules/breakout";
 
-type Situation = ReturnType<typeof situation>;
-type HeldDirection = Exclude<ReturnType<typeof paddleDirection>, "none">;
+type HeldDirection = Exclude<PaddleDirection, "none">;
 
 export interface BreakoutScreen {
   paint: () => void;

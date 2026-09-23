@@ -4,15 +4,18 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "boundaries": "feod-analyzer analyze --fail-on warning"
+    "boundaries": "feod-analyzer analyze --fail-on warning",
+    "terminal": "bun scripts/terminal.ts"
   },
   "dependencies": {
+    "@opentui/core": "0.5.11",
     "@reatom/core": "1001.3.0",
     "@reatom/jsx": "1001.3.0"
   },
   "devDependencies": {
     "@feod/analyzer": "0.1.1",
     "@stylistic/eslint-plugin": "5.10.0",
+    "@types/node": "24.13.6",
     "vite": "catalog:",
     "vite-plus": "catalog:"
   },

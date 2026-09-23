@@ -1,4 +1,4 @@
-import "./logger.ts";
+import "../logger.ts";
 import { h as element, mount } from "@reatom/jsx";
 
 import { advance } from "@/modules/breakout";

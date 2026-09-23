@@ -1,8 +1,9 @@
 import "./logger.ts";
 import { h as element, mount } from "@reatom/jsx";
 
-import { advance } from "../../modules/breakout";
-import { BreakoutScreen } from "../../pages/web";
+import { advance } from "@/modules/breakout";
+import { BreakoutScreen } from "@/pages/web";
+
 import { showFrameRate } from "./frame-rate.ts";
 
 const root = document.querySelector("#root");

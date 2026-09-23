@@ -9,6 +9,13 @@
     "moduleResolution": "bundler",
     "jsx": "preserve",
     "jsxImportSource": "@reatom/jsx",
+    "paths": {
+      "@/app/*": ["./src/app/*"],
+      "@/pages/*": ["./src/pages/*"],
+      "@/modules/*": ["./src/modules/*"],
+      "@/common/*": ["./src/common/*"],
+      "@/global/*": ["./src/global/*"]
+    },
     "allowImportingTsExtensions": true,
     "verbatimModuleSyntax": true,
     "moduleDetection": "force",

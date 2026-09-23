@@ -87,6 +87,9 @@ export default defineConfig({
     jsx: { runtime: "classic", pragma: "h", pragmaFrag: "hf", throwIfNamespace: false },
     jsxInject: 'import { h, hf } from "@reatom/jsx"',
   },
+  resolve: {
+    tsconfigPaths: true,
+  },
   staged: {
     "*.{ts,tsx}": "vp check --fix",
   },

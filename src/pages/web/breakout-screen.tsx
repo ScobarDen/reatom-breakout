@@ -18,7 +18,7 @@ import {
   rows,
   score,
   situation,
-} from "../../modules/breakout";
+} from "@/modules/breakout";
 
 type Situation = ReturnType<typeof situation>;
 type HeldDirection = Exclude<ReturnType<typeof paddleDirection>, "none">;

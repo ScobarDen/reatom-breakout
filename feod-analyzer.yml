@@ -1,3 +1,5 @@
+aliases:
+  "@": src
 levels: [app, pages, modules, common, global]
 submodules:
   enabled: true

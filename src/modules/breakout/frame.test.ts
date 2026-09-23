@@ -184,7 +184,7 @@ describe("the picture diff", () => {
     const breakout = await freshBreakout();
     const opening = openingMatch();
 
-    breakout.paddleDirection.set("right");
+    breakout.paddleDirection.setRight();
     breakout.advance(16);
 
     expect(breakout.paddle()).toBeGreaterThan(opening.paddle);
@@ -197,7 +197,7 @@ describe("the picture diff", () => {
     const still = [watch(breakout.score), watch(breakout.lives), watch(breakout.situation)];
     const bricks = wokenBricks(breakout);
 
-    breakout.paddleDirection.set("right");
+    breakout.paddleDirection.setRight();
     breakout.advance(16);
 
     expect(moved.map((spy) => spy.mock.calls.length)).toEqual([0, 0]);
@@ -246,7 +246,7 @@ describe("the picture diff", () => {
   test("keeps the held paddle direction across ticks", async () => {
     const breakout = await freshBreakout();
 
-    breakout.paddleDirection.set("left");
+    breakout.paddleDirection.setLeft();
 
     const direction = watch(breakout.paddleDirection);
 
@@ -256,6 +256,30 @@ describe("the picture diff", () => {
 
     expect(direction).not.toHaveBeenCalled();
     expect(breakout.paddleDirection()).toBe("left");
+  });
+});
+
+describe("the paddle direction", () => {
+  test("starts with no direction", async () => {
+    const breakout = await freshBreakout();
+
+    expect(breakout.paddleDirection()).toBe("none");
+  });
+
+  test("moves the paddle while held and stops it once released", async () => {
+    const breakout = await freshBreakout();
+    const opening = openingMatch();
+
+    breakout.paddleDirection.setRight();
+    breakout.advance(16);
+
+    const held = breakout.paddle();
+
+    breakout.paddleDirection.setNone();
+    breakout.advance(16);
+
+    expect(held).toBeGreaterThan(opening.paddle);
+    expect(breakout.paddle()).toBe(held);
   });
 });
 
@@ -292,7 +316,7 @@ describe("the tick", () => {
   async function paddleAfter(elapsedMs: number): Promise<number> {
     const breakout = await freshBreakout();
 
-    breakout.paddleDirection.set("left");
+    breakout.paddleDirection.setLeft();
     breakout.advance(elapsedMs);
 
     return breakout.paddle();

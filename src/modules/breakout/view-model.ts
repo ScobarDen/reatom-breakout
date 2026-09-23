@@ -1,4 +1,4 @@
-import { type Atom, type Computed, action, atom } from "@reatom/core";
+import { type Atom, type Computed, action, atom, reatomEnum } from "@reatom/core";
 
 import { type Match, columns, openingMatch, rows, step } from "./domain";
 
@@ -31,7 +31,9 @@ export function brickAt(column: number, row: number): Computed<boolean> {
   return brickAtoms[column][row];
 }
 
-export const paddleDirection = atom<Frame["direction"]>("none", "paddleDirection");
+const directions = ["none", "left", "right"] as const satisfies readonly Frame["direction"][];
+
+export const paddleDirection = reatomEnum(directions, "paddleDirection");
 
 export const launch = action(() => {
   pending.push("launch");

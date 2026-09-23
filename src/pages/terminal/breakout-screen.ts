@@ -43,6 +43,8 @@ const boardColumns = Math.round(boardWidth / cellWidth);
 const boardRows = Math.round(boardHeight / cellHeight);
 const brickCellWidth = boardWidth / columns / cellWidth;
 const brickCellHeight = boardHeight / rows / cellHeight;
+const firstRepeatDelayMs = 600;
+const repeatGapMs = 100;
 
 const boardColor = RGBA.fromHex("#111111");
 const paddleColor = RGBA.fromHex("#eeeeee");
@@ -115,7 +117,8 @@ function paintBoard(board: FrameBufferRenderable): void {
 }
 
 export function mountBreakoutScreen(renderer: CliRenderer): BreakoutScreen {
-  const heldKeys = new Set<string>();
+  const heldKeys = new Map<string, number>();
+  let reportsRelease = false;
   const scoreLine = new TextRenderable(renderer, { content: "" });
   const board = new FrameBufferRenderable(renderer, { width: boardColumns, height: boardRows });
   const situationLine = new TextRenderable(renderer, { content: "" });
@@ -139,13 +142,31 @@ export function mountBreakoutScreen(renderer: CliRenderer): BreakoutScreen {
   renderer.root.add(layout);
 
   function holdLatestDirection(): void {
-    const latest = [...heldKeys].at(-1);
+    const latest = [...heldKeys.keys()].at(-1);
 
     paddleDirection.set(latest === undefined ? "none" : (directionKeys.get(latest) ?? "none"));
   }
 
+  function letGoSilentKeys(): void {
+    if (reportsRelease) {
+      return;
+    }
+
+    const nowMs = performance.now();
+    const silent = [...heldKeys].filter(([, releaseAtMs]) => releaseAtMs <= nowMs);
+
+    if (silent.length === 0) {
+      return;
+    }
+    for (const [name] of silent) {
+      heldKeys.delete(name);
+    }
+    holdLatestDirection();
+  }
+
   return {
     paint() {
+      letGoSilentKeys();
       scoreLine.content = `Score ${score()}    Lives ${lives()}`;
       situationLine.content = situationLabels[situation()];
       paintBoard(board);
@@ -155,14 +176,17 @@ export function mountBreakoutScreen(renderer: CliRenderer): BreakoutScreen {
       const fire = isRepeat ? undefined : eventKeys.get(key.name);
 
       if (directionKeys.has(key.name)) {
+        const waitMs = heldKeys.has(key.name) ? repeatGapMs : firstRepeatDelayMs;
+
         heldKeys.delete(key.name);
-        heldKeys.add(key.name);
+        heldKeys.set(key.name, performance.now() + waitMs);
         holdLatestDirection();
       } else if (fire) {
         fire();
       }
     },
     release(key) {
+      reportsRelease = true;
       if (heldKeys.delete(key.name)) {
         holdLatestDirection();
       }

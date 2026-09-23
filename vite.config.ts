@@ -83,8 +83,12 @@ export default defineConfig({
       "vite-plus/prefer-vite-plus-imports": "error",
     },
   },
+  oxc: {
+    jsx: { runtime: "classic", pragma: "h", pragmaFrag: "hf", throwIfNamespace: false },
+    jsxInject: 'import { h, hf } from "@reatom/jsx"',
+  },
   staged: {
-    "*.ts": "vp check --fix",
+    "*.{ts,tsx}": "vp check --fix",
   },
   test: {
     globals: true,

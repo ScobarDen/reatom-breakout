@@ -58,6 +58,8 @@ const areas: readonly Area[] = [
   { dir: "src/pages", patterns: [tickImport] },
   { dir: "src/pages/web", patterns: [...webHost, tickImport] },
   { dir: "src/pages/terminal", patterns: [...terminalHost, tickImport] },
+  { dir: "src/pages/web", roles: ["test"], patterns: webHost },
+  { dir: "src/pages/terminal", roles: ["test"], patterns: terminalHost },
 ];
 
 function restrict(patterns: readonly ImportPattern[]): OxlintOverride["rules"] {

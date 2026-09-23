@@ -1,55 +1,24 @@
 import {
-  type PaddleDirection,
-  type Situation,
   ball,
   ballRadius,
   boardHeight,
   boardWidth,
   brickAt,
   columns,
-  launch,
   lives,
-  newMatch,
   paddle,
-  paddleDirection,
   paddleHeight,
   paddleWidth,
   paddleY,
-  pause,
-  resume,
   rows,
   score,
-  situation,
 } from "@/modules/breakout";
 
-type HeldDirection = Exclude<PaddleDirection, "none">;
+import { breakoutWebInput, situationLabel } from "./vm/breakout.web.vm.ts";
 
 const scale = 2;
 const brickWidth = boardWidth / columns;
 const brickHeight = boardHeight / rows;
-
-const situationLabels: Record<Situation, string> = {
-  serve: "Serve: Space to launch",
-  flight: "",
-  "paused-serve": "Paused: R to resume",
-  "paused-flight": "Paused: R to resume",
-  won: "You won! N for a new match",
-  lost: "You lost. N for a new match",
-};
-
-const directionKeys: Partial<Record<string, HeldDirection>> = {
-  ArrowLeft: "left",
-  KeyA: "left",
-  ArrowRight: "right",
-  KeyD: "right",
-};
-
-const eventKeys: Partial<Record<string, () => void>> = {
-  Space: launch,
-  KeyP: pause,
-  KeyR: resume,
-  KeyN: newMatch,
-};
 
 function Brick({ column, row }: { column: number; row: number }) {
   const standing = brickAt(column, row);
@@ -91,37 +60,16 @@ function Board() {
 }
 
 export function BreakoutScreen() {
-  const heldKeys = new Set<string>();
-
-  function holdLatestDirection(): void {
-    const latest = [...heldKeys].at(-1);
-
-    paddleDirection.set(latest === undefined ? "none" : (directionKeys[latest] ?? "none"));
-  }
+  const input = breakoutWebInput();
 
   function press(event: KeyboardEvent): void {
-    const fire = event.repeat ? undefined : eventKeys[event.code];
-
-    if (directionKeys[event.code]) {
+    if (input.press(event.code, event.repeat)) {
       event.preventDefault();
-      heldKeys.delete(event.code);
-      heldKeys.add(event.code);
-      holdLatestDirection();
-    } else if (fire) {
-      event.preventDefault();
-      fire();
     }
   }
 
   function release(event: KeyboardEvent): void {
-    if (heldKeys.delete(event.code)) {
-      holdLatestDirection();
-    }
-  }
-
-  function letGo(): void {
-    heldKeys.clear();
-    holdLatestDirection();
+    input.release(event.code);
   }
 
   return (
@@ -132,7 +80,7 @@ export function BreakoutScreen() {
       }}
       on:keydown={press}
       on:keyup={release}
-      on:blur={letGo}
+      on:blur={input.letGo}
       style={{
         "min-height": "100vh",
         display: "grid",
@@ -149,7 +97,7 @@ export function BreakoutScreen() {
         <span>{() => `Lives ${lives()}`}</span>
       </div>
       <Board />
-      <div>{() => situationLabels[situation()]}</div>
+      <div>{() => situationLabel()}</div>
       <div style={{ color: "#777" }}>
         ← → or A D move · Space launch · P pause · R resume · N new match
       </div>

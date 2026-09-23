@@ -1,15 +1,15 @@
 import { boardWidth, brickPoints, launchVelocity, paddleSpeed, paddleWidth } from "./constants.ts";
 import { fly } from "./flight.ts";
-import { openingMatch, servedBall, type Match } from "./match.ts";
+import { type Match, openingMatch, servedBall } from "./match.ts";
 
 type PaddleDirection = "left" | "right" | "none";
 type MatchEvent = "launch" | "pause" | "resume" | "new-match";
 
-type Frame = {
+interface Frame {
   readonly direction: PaddleDirection;
   readonly events: readonly MatchEvent[];
   readonly elapsedMs: number;
-};
+}
 
 type Airborne = Extract<Match, { velocity: unknown }>;
 
@@ -53,30 +53,45 @@ function playFlight(match: Airborne, paddle: number, elapsedMs: number): Match {
 
 function togglePause(match: Match, events: readonly MatchEvent[]): Match {
   const resuming = events.includes("resume");
-  if (!resuming && !events.includes("pause")) return match;
+  if (!resuming && !events.includes("pause")) {
+    return match;
+  }
 
   switch (match.situation) {
     case "serve":
-    case "paused-serve":
+    case "paused-serve": {
       return { ...match, situation: resuming ? "serve" : "paused-serve" };
+    }
     case "flight":
-    case "paused-flight":
+    case "paused-flight": {
       return { ...match, situation: resuming ? "flight" : "paused-flight" };
-    default:
-      return match;
+    }
+    case "won":
+    case "lost": {
+      break;
+    }
   }
+  return match;
 }
 
 export function step(match: Match, frame: Frame): Match {
-  if (frame.events.includes("new-match")) return openingMatch();
-  if (match.situation === "won" || match.situation === "lost") return match;
+  if (frame.events.includes("new-match")) {
+    return openingMatch();
+  }
+  if (match.situation === "won" || match.situation === "lost") {
+    return match;
+  }
 
   const live = togglePause(match, frame.events);
-  if (live.situation === "paused-serve" || live.situation === "paused-flight") return live;
+  if (live.situation === "paused-serve" || live.situation === "paused-flight") {
+    return live;
+  }
 
   const paddle = movePaddle(live.paddle, frame.direction, frame.elapsedMs);
 
-  if (live.situation === "flight") return playFlight(live, paddle, frame.elapsedMs);
+  if (live.situation === "flight") {
+    return playFlight(live, paddle, frame.elapsedMs);
+  }
 
   const served: Match = { ...live, paddle, ball: servedBall(paddle) };
   if (frame.events.includes("launch")) {

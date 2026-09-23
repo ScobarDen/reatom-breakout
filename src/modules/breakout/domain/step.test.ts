@@ -1,4 +1,5 @@
 import {
+  type Match,
   ballRadius,
   boardHeight,
   boardWidth,
@@ -9,7 +10,6 @@ import {
   paddleY,
   rows,
   step,
-  type Match,
 } from "./index.ts";
 
 const cellWidth = boardWidth / columns;
@@ -17,8 +17,8 @@ const cellHeight = boardHeight / rows;
 const servedBallY = paddleY - paddleHeight / 2 - ballRadius;
 
 function standingCells(match: Match): [number, number][] {
-  return match.bricks.flatMap((column, c) =>
-    column.flatMap((standing, r): [number, number][] => (standing ? [[c, r]] : [])),
+  return match.bricks.flatMap((cells, column) =>
+    cells.flatMap((standing, row): [number, number][] => (standing ? [[column, row]] : [])),
   );
 }
 
@@ -30,7 +30,9 @@ function frame(overrides: Partial<Frame> = {}): Frame {
 
 function stepFrames(match: Match, frames: number, overrides: Partial<Frame> = {}): Match {
   let next = match;
-  for (let i = 0; i < frames; i++) next = step(next, frame(overrides));
+  for (let played = 0; played < frames; played++) {
+    next = step(next, frame(overrides));
+  }
   return next;
 }
 
@@ -46,8 +48,8 @@ describe("openingMatch", () => {
   test("lays out a solid rectangle of bricks on the fixed grid", () => {
     const match = openingMatch();
     const cells = standingCells(match);
-    const cellColumns = cells.map(([c]) => c);
-    const cellRows = cells.map(([, r]) => r);
+    const cellColumns = cells.map(([column]) => column);
+    const cellRows = cells.map(([, row]) => row);
     const width = Math.max(...cellColumns) - Math.min(...cellColumns) + 1;
     const height = Math.max(...cellRows) - Math.min(...cellRows) + 1;
 
@@ -126,14 +128,12 @@ describe("launch", () => {
     const movingRight = launched(openingMatch(), "right");
 
     const reference = heading(fromCenter, step(fromCenter, frame()));
-    expect(heading(fromLeftWall, step(fromLeftWall, frame()))).toEqual({
-      x: expect.closeTo(reference.x),
-      y: expect.closeTo(reference.y),
-    });
-    expect(heading(movingRight, step(movingRight, frame()))).toEqual({
-      x: expect.closeTo(reference.x),
-      y: expect.closeTo(reference.y),
-    });
+    const leftWallHeading = heading(fromLeftWall, step(fromLeftWall, frame()));
+    const movingRightHeading = heading(movingRight, step(movingRight, frame()));
+    expect(leftWallHeading.x).toBeCloseTo(reference.x);
+    expect(leftWallHeading.y).toBeCloseTo(reference.y);
+    expect(movingRightHeading.x).toBeCloseTo(reference.x);
+    expect(movingRightHeading.y).toBeCloseTo(reference.y);
   });
 });
 
@@ -162,9 +162,9 @@ describe("flight", () => {
 });
 
 function bricksAt(...cells: [number, number][]): boolean[][] {
-  return Array.from({ length: columns }, (_, c) =>
-    Array.from({ length: rows }, (_, r) =>
-      cells.some(([column, row]) => column === c && row === r),
+  return Array.from({ length: columns }, (_column, column) =>
+    Array.from({ length: rows }, (_row, row) =>
+      cells.some(([brickColumn, brickRow]) => brickColumn === column && brickRow === row),
     ),
   );
 }
@@ -226,8 +226,8 @@ describe("bricks", () => {
       frame({ elapsedMs: 200 }),
     );
 
-    expect(next.bricks[5]![7]).toBe(false);
-    expect(next.bricks[0]![14]).toBe(true);
+    expect(next.bricks[5][7]).toBe(false);
+    expect(next.bricks[0][14]).toBe(true);
     expect(next.ball.x).toBeCloseTo(230);
     expect(next.ball.y).toBeCloseTo(8 * cellHeight + ballRadius + 10);
     expect(next.score).toBeGreaterThan(0);
@@ -245,7 +245,7 @@ describe("bricks", () => {
       frame({ elapsedMs: 200 }),
     );
 
-    expect(next.bricks[5]![7]).toBe(false);
+    expect(next.bricks[5][7]).toBe(false);
     expect(next.ball.x).toBeCloseTo(5 * cellWidth - ballRadius - 10);
     expect(next.ball.y).toBeCloseTo(154);
   });
@@ -260,8 +260,8 @@ describe("bricks", () => {
       frame({ elapsedMs: 200 }),
     );
 
-    expect(low.bricks[5]![7]).toBe(false);
-    expect(high.bricks[1]![1]).toBe(false);
+    expect(low.bricks[5][7]).toBe(false);
+    expect(high.bricks[1][1]).toBe(false);
     expect(high.score).toBe(low.score);
   });
 
@@ -281,8 +281,8 @@ describe("bricks", () => {
       frame({ elapsedMs: 200 }),
     );
 
-    expect(next.bricks[4]![7]).toBe(false);
-    expect(next.bricks[5]![7]).toBe(false);
+    expect(next.bricks[4][7]).toBe(false);
+    expect(next.bricks[5][7]).toBe(false);
     expect(next.score).toBe(2 * single.score);
     expect(next.ball.x).toBeCloseTo(5 * cellWidth + 5);
     expect(next.ball.y).toBeCloseTo(175);
@@ -300,8 +300,8 @@ describe("bricks", () => {
       frame({ elapsedMs: 200 }),
     );
 
-    expect(next.bricks[4]![7]).toBe(false);
-    expect(next.bricks[5]![8]).toBe(false);
+    expect(next.bricks[4][7]).toBe(false);
+    expect(next.bricks[5][8]).toBe(false);
     expect(next.ball.x).toBeCloseTo(185);
     expect(next.ball.y).toBeCloseTo(175);
   });
@@ -312,7 +312,9 @@ function speedAfter(match: Match): number {
   return Math.hypot(later.ball.x - match.ball.x, later.ball.y - match.ball.y) / 10;
 }
 
-function bounceOffPaddle(contactX: number, velocity = { x: 0, y: 0.1 }): Match {
+const straightDown = { x: 0, y: 0.1 };
+
+function bounceOffPaddle(contactX: number, velocity = straightDown): Match {
   const paddleTop = paddleY - paddleHeight / 2 - ballRadius;
   return step(
     flight({ x: contactX - velocity.x * 100, y: paddleTop - velocity.y * 100 }, velocity, {
@@ -456,7 +458,7 @@ describe("after the match ends", () => {
   test.each([
     ["won", won],
     ["lost", lost],
-  ])("%s ignores launch, pause, resume and direction", (_, ended) => {
+  ])("%s ignores launch, pause, resume and direction", (_name, ended) => {
     for (const input of everyInput) {
       expect(step(ended, input)).toEqual(ended);
     }
@@ -465,7 +467,7 @@ describe("after the match ends", () => {
   test.each([
     ["won", won],
     ["lost", lost],
-  ])("%s still listens to a new match", (_, ended) => {
+  ])("%s still listens to a new match", (_name, ended) => {
     expect(step(ended, frame({ events: ["new-match"] }))).toEqual(openingMatch());
   });
 });
@@ -543,7 +545,7 @@ describe("new match", () => {
     ["serve", stepFrames(openingMatch(), 3, { direction: "left" })],
     ["flight", flying],
     ["paused flight", step(flying, frame({ events: ["pause"] }))],
-  ])("starts over from a %s", (_, match) => {
+  ])("starts over from a %s", (_name, match) => {
     expect(step(match, frame({ events: ["new-match"] }))).toEqual(openingMatch());
   });
 

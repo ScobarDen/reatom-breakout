@@ -11,23 +11,26 @@ import {
 } from "./constants.ts";
 import type { Bricks, Vector } from "./match.ts";
 
-type Ball = { readonly position: Vector; readonly velocity: Vector };
+interface Ball {
+  readonly position: Vector;
+  readonly velocity: Vector;
+}
 
-type Contact = {
+interface Contact {
   readonly at: number;
   readonly flipX: boolean;
   readonly flipY: boolean;
   readonly brick?: readonly [column: number, row: number];
   readonly paddle?: true;
   readonly bottom?: true;
-};
+}
 
-export type Flown = {
+export interface Flown {
   readonly ball: Ball;
   readonly bricks: Bricks;
   readonly destroyed: number;
   readonly ending?: "cleared" | "bottom";
-};
+}
 
 const cellWidth = boardWidth / columns;
 const cellHeight = boardHeight / rows;
@@ -63,19 +66,19 @@ function wallContacts({ position, velocity }: Ball): Contact[] {
   return contacts;
 }
 
-type Box = {
+interface Box {
   readonly left: number;
   readonly right: number;
   readonly top: number;
   readonly bottom: number;
-};
+}
 
-type Sweep = {
+interface Sweep {
   readonly enter: number;
   readonly exit: number;
   readonly enterX: number;
   readonly enterY: number;
-};
+}
 
 function axisSweep(
   from: number,
@@ -114,28 +117,34 @@ function brickContact(ball: Ball, column: number, row: number): Contact | undefi
     top: row * cellHeight,
     bottom: (row + 1) * cellHeight,
   });
-  if (enter < 0 || enter >= exit) return undefined;
+  if (enter < 0 || enter >= exit) {
+    return undefined;
+  }
   return { at: enter, flipX: enterX >= enterY, flipY: enterY >= enterX, brick: [column, row] };
 }
 
 function brickContacts(ball: Ball, bricks: Bricks): Contact[] {
-  return bricks.flatMap((column, c) =>
-    column.flatMap((standing, r) => {
-      const contact = standing ? brickContact(ball, c, r) : undefined;
+  return bricks.flatMap((cells, column) =>
+    cells.flatMap((standing, row) => {
+      const contact = standing ? brickContact(ball, column, row) : undefined;
       return contact ? [contact] : [];
     }),
   );
 }
 
 function paddleContact(ball: Ball, paddle: number): Contact[] {
-  if (ball.velocity.y <= 0) return [];
+  if (ball.velocity.y <= 0) {
+    return [];
+  }
   const { enter, exit } = sweepInto(ball, {
     left: paddle - paddleWidth / 2,
     right: paddle + paddleWidth / 2,
     top: paddleY - paddleHeight / 2,
     bottom: paddleY + paddleHeight / 2,
   });
-  if (enter >= exit || exit <= 0) return [];
+  if (enter >= exit || exit <= 0) {
+    return [];
+  }
   return [{ at: Math.max(0, enter), flipX: false, flipY: false, paddle: true }];
 }
 
@@ -152,11 +161,20 @@ function travel(position: Vector, velocity: Vector, time: number): Vector {
 }
 
 function withoutBricks(bricks: Bricks, hit: Contact[]): Bricks {
-  return bricks.map((column, c) =>
-    column.map(
-      (standing, r) => standing && !hit.some(({ brick }) => brick?.[0] === c && brick[1] === r),
+  return bricks.map((cells, column) =>
+    cells.map(
+      (standing, row) =>
+        standing && !hit.some(({ brick }) => brick?.[0] === column && brick[1] === row),
     ),
   );
+}
+
+function contactsWithin(ball: Ball, bricks: Bricks, paddle: number, time: number): Contact[] {
+  return [
+    ...wallContacts(ball),
+    ...brickContacts(ball, bricks),
+    ...paddleContact(ball, paddle),
+  ].filter((contact) => contact.at <= time);
 }
 
 export function fly(start: Ball, startBricks: Bricks, paddle: number, elapsedMs: number): Flown {
@@ -166,11 +184,7 @@ export function fly(start: Ball, startBricks: Bricks, paddle: number, elapsedMs:
   let remaining = elapsedMs;
 
   for (;;) {
-    const contacts = [
-      ...wallContacts(ball),
-      ...brickContacts(ball, bricks),
-      ...paddleContact(ball, paddle),
-    ].filter((contact) => contact.at <= remaining);
+    const contacts = contactsWithin(ball, bricks, paddle, remaining);
     if (contacts.length === 0) {
       return {
         ball: { ...ball, position: travel(ball.position, ball.velocity, remaining) },

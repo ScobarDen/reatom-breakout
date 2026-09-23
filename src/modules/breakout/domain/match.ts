@@ -10,17 +10,20 @@ import {
   startingLives,
 } from "./constants.ts";
 
-export type Vector = { readonly x: number; readonly y: number };
+export interface Vector {
+  readonly x: number;
+  readonly y: number;
+}
 
 export type Bricks = readonly (readonly boolean[])[];
 
-type MatchCommon = {
+interface MatchCommon {
   readonly bricks: Bricks;
   readonly paddle: number;
   readonly ball: Vector;
   readonly lives: number;
   readonly score: number;
-};
+}
 
 export type Match = MatchCommon &
   (
@@ -39,7 +42,7 @@ export function openingMatch(): Match {
     bricks: Array.from({ length: columns }, () =>
       Array.from(
         { length: rows },
-        (_, row) => row >= firstBrickRow && row < firstBrickRow + brickRowCount,
+        (_cell, row) => row >= firstBrickRow && row < firstBrickRow + brickRowCount,
       ),
     ),
     paddle,

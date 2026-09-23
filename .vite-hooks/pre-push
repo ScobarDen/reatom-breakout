@@ -1,4 +1,5 @@
 #!/bin/sh
 set -eu
 vp check
+vp test
 vp run boundaries

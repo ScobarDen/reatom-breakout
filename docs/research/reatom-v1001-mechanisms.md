@@ -12,23 +12,23 @@
 
 ## Сводка
 
-| Механизм из списка | Есть | Как называется в v1001 |
-| --- | --- | --- |
-| atom | да | `atom` |
-| computed | да | `computed`, плюс `withComputed` для записываемого атома |
-| action | да | `action` |
-| async action и эффекты | да | `action` + `wrap` + `withAsync` / `withAsyncData`; сайд-эффекты — `effect` |
-| реактивные зависимости | да | неявный трекинг при вызове `atom()`; чтение без подписки — `peek` |
-| lifecycle | да | очереди кадра + `withConnectHook` / `withChangeHook` / `withCallHook` / `withInit` |
-| subscription | да | `atom.subscribe`, автоподписка у `effect` и `reatomComponent` |
-| batch | да | `batch`, плюс микротаск-очереди; это не отдельный store |
-| отмена и конкурентность | да | `withAbort`, `abortVar`, `wrap`, `race` |
-| persistence | да | `reatomPersist` и адаптеры (`withLocalStorage` и соседние) |
-| синхронизация с URL | да | `urlAtom`, `reatomRoute`, `searchParamsAtom`, `withSearchParams` |
-| context / DI | да, но не v3-`ctx` | неявный `context`, `variable` как IoC, `bind` как лёгкая привязка кадра |
-| DevTools | частично | задокументирован `connectLogger`; в дереве `v1001` ещё есть `@reatom/admin` |
-| fine-grained подписка | отдельного имени нет | трекинг прочитанных атомов; в DOM это `@reatom/jsx` |
-| внешний источник событий | да | `onEvent`, `reatomObservable` / `withObservable`, `reatomWebSocket` |
+| Механизм из списка       | Есть                 | Как называется в v1001                                                             |
+| ------------------------ | -------------------- | ---------------------------------------------------------------------------------- |
+| atom                     | да                   | `atom`                                                                             |
+| computed                 | да                   | `computed`, плюс `withComputed` для записываемого атома                            |
+| action                   | да                   | `action`                                                                           |
+| async action и эффекты   | да                   | `action` + `wrap` + `withAsync` / `withAsyncData`; сайд-эффекты — `effect`         |
+| реактивные зависимости   | да                   | неявный трекинг при вызове `atom()`; чтение без подписки — `peek`                  |
+| lifecycle                | да                   | очереди кадра + `withConnectHook` / `withChangeHook` / `withCallHook` / `withInit` |
+| subscription             | да                   | `atom.subscribe`, автоподписка у `effect` и `reatomComponent`                      |
+| batch                    | да                   | `batch`, плюс микротаск-очереди; это не отдельный store                            |
+| отмена и конкурентность  | да                   | `withAbort`, `abortVar`, `wrap`, `race`                                            |
+| persistence              | да                   | `reatomPersist` и адаптеры (`withLocalStorage` и соседние)                         |
+| синхронизация с URL      | да                   | `urlAtom`, `reatomRoute`, `searchParamsAtom`, `withSearchParams`                   |
+| context / DI             | да, но не v3-`ctx`   | неявный `context`, `variable` как IoC, `bind` как лёгкая привязка кадра            |
+| DevTools                 | частично             | задокументирован `connectLogger`; в дереве `v1001` ещё есть `@reatom/admin`        |
+| fine-grained подписка    | отдельного имени нет | трекинг прочитанных атомов; в DOM это `@reatom/jsx`                                |
+| внешний источник событий | да                   | `onEvent`, `reatomObservable` / `withObservable`, `reatomWebSocket`                |
 
 ## atom
 

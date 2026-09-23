@@ -32,16 +32,16 @@
 
 Два задокументированных пути. Версии на 2026-09-22 не совпадают: `vite-plus` пинит свои копии, а не `latest` с npm.
 
-| Пакет | `latest` на npm | Что это |
-| --- | --- | --- |
-| `oxlint` | 1.85.0 | `Linter for the JavaScript Oxidation Compiler` |
-| `oxfmt` | 0.70.0 | `Formatter for the JavaScript Oxidation Compiler` |
-| `oxlint-tsgolint` | 7.0.2002 | type-aware линт для `oxlint`, на `typescript-go` |
-| `vite` | 8.3.0 | `Native-ESM powered web dev build tool` |
-| `vitest` | 5.0.1 | `Next generation testing framework powered by Vite` |
-| `vite-plus` | 0.3.3 | `The Unified Toolchain for the Web` |
-| `ox` | 1.8.1 | `Ethereum Standard Library`, не Oxc |
-| `dependency-cruiser` | 18.4.0 | отдельный валидатор графа зависимостей |
+| Пакет                | `latest` на npm | Что это                                             |
+| -------------------- | --------------- | --------------------------------------------------- |
+| `oxlint`             | 1.85.0          | `Linter for the JavaScript Oxidation Compiler`      |
+| `oxfmt`              | 0.70.0          | `Formatter for the JavaScript Oxidation Compiler`   |
+| `oxlint-tsgolint`    | 7.0.2002        | type-aware линт для `oxlint`, на `typescript-go`    |
+| `vite`               | 8.3.0           | `Native-ESM powered web dev build tool`             |
+| `vitest`             | 5.0.1           | `Next generation testing framework powered by Vite` |
+| `vite-plus`          | 0.3.3           | `The Unified Toolchain for the Web`                 |
+| `ox`                 | 1.8.1           | `Ethereum Standard Library`, не Oxc                 |
+| `dependency-cruiser` | 18.4.0          | отдельный валидатор графа зависимостей              |
 
 ### Отдельные пакеты
 
@@ -70,18 +70,18 @@
 
 ## Что каждый проверяет
 
-| Инструмент | Проверяет | Не проверяет |
-| --- | --- | --- |
-| `oxlint` без флагов | линт: по умолчанию correctness-проверки, не все 800+ правил | формат, тесты, типы |
-| `oxlint --type-aware` | плюс type-aware правила `typescript/*` через `tsgolint` | сам по себе полный `tsc`, пока не включён `--type-check` |
-| `oxlint --type-aware --type-check` | линт и диагностики TypeScript; дока прямо говорит, что этим можно заменить `tsc --noEmit` | формат и тесты |
-| `oxfmt` | формат; `--check` только смотрит, не пишет | линт, типы, тесты |
-| Vite | трансформирует и собирает модули | типы и линт; дока прямо выносит их из transform pipeline |
-| `vitest` | выполняет тесты | типы, пока не включён typecheck; линт и формат |
-| `vitest --typecheck` | гоняет `tsc` (по умолчанию) и type-тесты в `*.test-d.ts`; ошибки в исходниках тоже валят прогон, если их не заглушить | линт и формат |
-| `vp check` | формат (Oxfmt) + линт (Oxlint) + типы (`tsgo`) одним проходом | тесты |
-| `vp test` | тесты через Vitest | не замена `vp check` |
-| `vp lint` / `vp fmt` | линт и формат по отдельности | друг друга и, без опций, типы |
+| Инструмент                         | Проверяет                                                                                                             | Не проверяет                                             |
+| ---------------------------------- | --------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- |
+| `oxlint` без флагов                | линт: по умолчанию correctness-проверки, не все 800+ правил                                                           | формат, тесты, типы                                      |
+| `oxlint --type-aware`              | плюс type-aware правила `typescript/*` через `tsgolint`                                                               | сам по себе полный `tsc`, пока не включён `--type-check` |
+| `oxlint --type-aware --type-check` | линт и диагностики TypeScript; дока прямо говорит, что этим можно заменить `tsc --noEmit`                             | формат и тесты                                           |
+| `oxfmt`                            | формат; `--check` только смотрит, не пишет                                                                            | линт, типы, тесты                                        |
+| Vite                               | трансформирует и собирает модули                                                                                      | типы и линт; дока прямо выносит их из transform pipeline |
+| `vitest`                           | выполняет тесты                                                                                                       | типы, пока не включён typecheck; линт и формат           |
+| `vitest --typecheck`               | гоняет `tsc` (по умолчанию) и type-тесты в `*.test-d.ts`; ошибки в исходниках тоже валят прогон, если их не заглушить | линт и формат                                            |
+| `vp check`                         | формат (Oxfmt) + линт (Oxlint) + типы (`tsgo`) одним проходом                                                         | тесты                                                    |
+| `vp test`                          | тесты через Vitest                                                                                                    | не замена `vp check`                                     |
+| `vp lint` / `vp fmt`               | линт и формат по отдельности                                                                                          | друг друга и, без опций, типы                            |
 
 Источники по строкам: [Oxlint](https://oxc.rs/docs/guide/usage/linter), [type-aware](https://oxc.rs/docs/guide/usage/linter/type-aware), [Oxfmt](https://oxc.rs/docs/guide/usage/formatter), [CLI форматтера](https://oxc.rs/docs/guide/usage/formatter/cli) (`--write` по умолчанию, `--check` отдельно), [Features Vite](https://vite.dev/guide/features), [Why Vitest](https://vitest.dev/guide/why), [Writing tests](https://vitest.dev/guide/learn/writing-tests), [typecheck Vitest 5](https://vitest.dev/config/typecheck), [typecheck Vitest 4](https://v4.vitest.dev/config/typecheck), [Vite+ check](https://viteplus.dev/), [lint](https://viteplus.dev/guide/lint), [fmt](https://viteplus.dev/guide/fmt), [getting started](https://viteplus.dev/guide/).
 

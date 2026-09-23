@@ -1,0 +1,5 @@
+levels: [app, pages, modules, common, global]
+submodules:
+  enabled: true
+  maxDepth: 2
+ignoreRules: []

@@ -7,7 +7,7 @@ export {
   paddleWidth,
   paddleY,
   rows,
-} from "./domain/index.ts";
+} from "./domain";
 export {
   advance,
   ball,

@@ -1,16 +1,15 @@
 import {
-  type Match,
   ballRadius,
   boardHeight,
   boardWidth,
   columns,
-  openingMatch,
   paddleHeight,
   paddleWidth,
   paddleY,
   rows,
-  step,
-} from "./index.ts";
+} from "./constants.ts";
+import { type Match, openingMatch } from "./match.ts";
+import { step } from "./step.ts";
 
 const cellWidth = boardWidth / columns;
 const cellHeight = boardHeight / rows;

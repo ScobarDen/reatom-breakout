@@ -1,9 +1,9 @@
 import { type Computed, context, sleep } from "@reatom/core";
 
-import { columns, openingMatch, rows } from "./domain/index.ts";
-import type * as Module from "./index.ts";
+import { columns, openingMatch, paddleWidth, rows } from "./domain";
+import type * as ViewModel from "./view-model.ts";
 
-type Breakout = typeof Module;
+type Breakout = typeof ViewModel;
 type Spy = ReturnType<typeof vi.fn>;
 
 const everyCell = Array.from({ length: columns }, (_cells, column) =>
@@ -14,7 +14,7 @@ function freshBreakout(): Promise<Breakout> {
   context.reset();
   vi.resetModules();
 
-  return import("./index.ts");
+  return import("./view-model.ts");
 }
 
 function brickPicture(breakout: Breakout): boolean[][] {
@@ -51,7 +51,7 @@ function playUntilScore(breakout: Breakout): void {
 
 describe("the public surface", () => {
   test("exposes the picture, the input and the tick, and no match", async () => {
-    const breakout = await freshBreakout();
+    const breakout = await import("./index.ts");
 
     expect(Object.keys(breakout).toSorted()).toEqual([
       "advance",
@@ -302,7 +302,6 @@ describe("the tick", () => {
     const capped = await paddleAfter(100);
     const stalled = await paddleAfter(60_000);
     const shorter = await paddleAfter(99);
-    const { paddleWidth } = await freshBreakout();
 
     expect(stalled).toBe(capped);
     expect(shorter).toBeGreaterThan(capped);

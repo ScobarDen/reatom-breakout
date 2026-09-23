@@ -1,6 +1,6 @@
 import { type Atom, type Computed, action, atom } from "@reatom/core";
 
-import { type Match, columns, openingMatch, rows, step } from "./domain/index.ts";
+import { type Match, columns, openingMatch, rows, step } from "./domain";
 
 type Frame = Parameters<typeof step>[1];
 type MatchEvent = Frame["events"][number];

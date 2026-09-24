@@ -86,6 +86,7 @@ const areaOverrides: OxlintOverride[] = areas.flatMap((area) =>
 );
 
 export default defineConfig({
+  base: "./",
   fmt: {
     sortImports: true,
   },
@@ -140,6 +141,13 @@ export default defineConfig({
     "*.{ts,tsx}": "vp check --fix",
   },
   test: {
+    coverage: {
+      provider: "v8",
+      include: ["src/**/*.{ts,tsx}"],
+      exclude: ["src/**/*.test.{ts,tsx}"],
+      reporter: ["text", "json-summary"],
+      reportOnFailure: true,
+    },
     globals: true,
   },
 });

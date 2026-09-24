@@ -29,7 +29,7 @@ Read `docs/architecture.md` before touching code: levels, file roles, the frame 
 - `vp run boundaries`: FEOD level check.
 - `vp dev`: web host on port 5173; `vp run terminal`: terminal host (Bun).
 
-A change is done when `vp check`, `vp run boundaries`, and `vp test run` are green. The commit hook runs `vp check --fix` on staged files.
+CI (`.github/workflows/ci.yml`) runs the same checks plus `vp build` as separate jobs and deploys the web host to GitHub Pages from `main`. A change is done when `vp check`, `vp run boundaries`, and `vp test run` are green. The commit hook runs `vp check --fix` on staged files.
 
 ## Language
 

@@ -25,8 +25,9 @@ function role(...names: readonly string[]): ImportPattern {
 }
 
 const roles: readonly Role[] = [
-  { name: "any", files: "*.{ts,tsx}", patterns: [role("dto")] },
+  { name: "every", files: "*.{ts,tsx}", patterns: [role("dto")] },
   { name: "test", files: "*.test.{ts,tsx}", patterns: [] },
+  { name: "model-test", files: "*.model.test.{ts,tsx}", patterns: [] },
   { name: "dto", files: "*.dto.ts", patterns: [] },
   { name: "api", files: "*.api.ts", patterns: [role("vm", "view")] },
   { name: "config", files: "*.config.ts", patterns: [role("dto")] },
@@ -51,7 +52,7 @@ const terminalHost: readonly ImportPattern[] = [
 const tickImport: ImportPattern = { importNames: ["advance"], regex: "modules/breakout" };
 
 const areas: readonly Area[] = [
-  { dir: "src/modules/breakout", roles: ["config", "model"], patterns: [bareImport] },
+  { dir: "src/modules/breakout", roles: ["config", "model", "model-test"], patterns: [bareImport] },
   { dir: "src/app/web", patterns: webHost },
   { dir: "src/app/terminal", patterns: terminalHost },
   { dir: "src/common/frame-rate", patterns: webHost },

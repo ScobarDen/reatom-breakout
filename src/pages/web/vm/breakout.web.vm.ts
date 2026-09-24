@@ -11,8 +11,15 @@ import {
 
 type HeldDirection = Exclude<PaddleDirection, "none">;
 
+export interface PressedKey {
+  readonly code: string;
+  readonly repeat: boolean;
+}
+
+export type KeyOutcome = "claimed" | "ignored";
+
 export interface BreakoutWebInput {
-  press: (code: string, isRepeat: boolean) => boolean;
+  press: (key: PressedKey) => KeyOutcome;
   release: (code: string) => void;
   letGo: () => void;
 }
@@ -54,23 +61,23 @@ export function breakoutWebInput(): BreakoutWebInput {
   }
 
   return {
-    press(code, isRepeat) {
-      const fire = isRepeat ? undefined : eventKeys[code];
+    press({ code, repeat }) {
+      const fire = repeat ? undefined : eventKeys[code];
 
       if (directionKeys[code]) {
         heldKeys.delete(code);
         heldKeys.add(code);
         holdLatestDirection();
 
-        return true;
+        return "claimed";
       }
       if (fire) {
         fire();
 
-        return true;
+        return "claimed";
       }
 
-      return false;
+      return "ignored";
     },
     release(code) {
       if (heldKeys.delete(code)) {

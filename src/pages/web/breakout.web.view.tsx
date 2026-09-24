@@ -63,7 +63,7 @@ export function BreakoutScreen() {
   const input = breakoutWebInput();
 
   function press(event: KeyboardEvent): void {
-    if (input.press(event.code, event.repeat)) {
+    if (input.press(event) === "claimed") {
       event.preventDefault();
     }
   }

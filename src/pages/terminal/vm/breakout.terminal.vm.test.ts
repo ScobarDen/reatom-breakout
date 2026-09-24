@@ -2,18 +2,18 @@ import { context } from "@reatom/core";
 
 import type * as BreakoutModule from "@/modules/breakout";
 
-import type * as TerminalScreen from "./breakout.terminal.vm.ts";
+import type * as TerminalInput from "./breakout.terminal.vm.ts";
 
 type Breakout = typeof BreakoutModule;
 
-interface Screen {
+interface Fixture {
   readonly breakout: Breakout;
-  readonly input: TerminalScreen.BreakoutTerminalInput;
+  readonly input: TerminalInput.BreakoutTerminalInput;
   readonly clock: { nowMs: number };
   readonly situationLabel: () => string;
 }
 
-async function freshScreen(): Promise<Screen> {
+async function freshInput(): Promise<Fixture> {
   context.reset();
   vi.resetModules();
 
@@ -26,10 +26,10 @@ async function freshScreen(): Promise<Screen> {
 
 describe("direction keys", () => {
   test("follow the latest held key and fall back to the one still held", async () => {
-    const { breakout, input } = await freshScreen();
+    const { breakout, input } = await freshInput();
 
-    input.press("a", false);
-    input.press("right", false);
+    input.press({ name: "a", repeat: false });
+    input.press({ name: "right", repeat: false });
 
     expect(breakout.paddleDirection()).toBe("right");
 
@@ -45,9 +45,9 @@ describe("direction keys", () => {
 
 describe("a terminal that reports no releases", () => {
   test("lets a key go once the first key repeat is overdue", async () => {
-    const { breakout, input, clock } = await freshScreen();
+    const { breakout, input, clock } = await freshInput();
 
-    input.press("left", false);
+    input.press({ name: "left", repeat: false });
     clock.nowMs = 599;
     input.letGoSilentKeys();
 
@@ -60,11 +60,11 @@ describe("a terminal that reports no releases", () => {
   });
 
   test("keeps a key while its repeats keep coming", async () => {
-    const { breakout, input, clock } = await freshScreen();
+    const { breakout, input, clock } = await freshInput();
 
-    input.press("left", false);
+    input.press({ name: "left", repeat: false });
     clock.nowMs = 550;
-    input.press("left", true);
+    input.press({ name: "left", repeat: true });
     clock.nowMs = 649;
     input.letGoSilentKeys();
 
@@ -77,13 +77,13 @@ describe("a terminal that reports no releases", () => {
   });
 
   test("falls back to the key still held when the latest one goes silent", async () => {
-    const { breakout, input, clock } = await freshScreen();
+    const { breakout, input, clock } = await freshInput();
 
-    input.press("a", false);
+    input.press({ name: "a", repeat: false });
     clock.nowMs = 10;
-    input.press("d", false);
+    input.press({ name: "d", repeat: false });
     clock.nowMs = 20;
-    input.press("a", true);
+    input.press({ name: "a", repeat: true });
     clock.nowMs = 120;
     input.letGoSilentKeys();
 
@@ -93,10 +93,10 @@ describe("a terminal that reports no releases", () => {
 
 describe("a terminal that reports releases", () => {
   test("holds a key until its release however long it stays silent", async () => {
-    const { breakout, input, clock } = await freshScreen();
+    const { breakout, input, clock } = await freshInput();
 
-    input.press("left", false);
-    input.press("right", false);
+    input.press({ name: "left", repeat: false });
+    input.press({ name: "right", repeat: false });
     input.release("right");
     clock.nowMs = 60_000;
     input.letGoSilentKeys();
@@ -107,43 +107,43 @@ describe("a terminal that reports releases", () => {
 
 describe("event keys", () => {
   test("space launches the serve", async () => {
-    const { breakout, input } = await freshScreen();
+    const { breakout, input } = await freshInput();
 
-    input.press("space", false);
+    input.press({ name: "space", repeat: false });
     breakout.advance(16);
 
     expect(breakout.situation()).toBe("flight");
   });
 
   test("p pauses and r resumes", async () => {
-    const { breakout, input } = await freshScreen();
+    const { breakout, input } = await freshInput();
 
-    input.press("p", false);
+    input.press({ name: "p", repeat: false });
     breakout.advance(16);
 
     expect(breakout.situation()).toBe("paused-serve");
 
-    input.press("r", false);
+    input.press({ name: "r", repeat: false });
     breakout.advance(16);
 
     expect(breakout.situation()).toBe("serve");
   });
 
   test("n starts a new match", async () => {
-    const { breakout, input } = await freshScreen();
+    const { breakout, input } = await freshInput();
 
-    input.press("space", false);
+    input.press({ name: "space", repeat: false });
     breakout.advance(16);
-    input.press("n", false);
+    input.press({ name: "n", repeat: false });
     breakout.advance(16);
 
     expect(breakout.situation()).toBe("serve");
   });
 
   test("do nothing on a key repeat", async () => {
-    const { breakout, input } = await freshScreen();
+    const { breakout, input } = await freshInput();
 
-    input.press("space", true);
+    input.press({ name: "space", repeat: true });
     breakout.advance(16);
 
     expect(breakout.situation()).toBe("serve");
@@ -152,20 +152,20 @@ describe("event keys", () => {
 
 describe("the situation label", () => {
   test("prompts the launch on a serve and the resume on a pause", async () => {
-    const { breakout, input, situationLabel } = await freshScreen();
+    const { breakout, input, situationLabel } = await freshInput();
 
     expect(situationLabel()).toBe("Serve: Space to launch");
 
-    input.press("p", false);
+    input.press({ name: "p", repeat: false });
     breakout.advance(16);
 
     expect(situationLabel()).toBe("Paused: R to resume");
   });
 
   test("stays empty while the ball flies", async () => {
-    const { breakout, input, situationLabel } = await freshScreen();
+    const { breakout, input, situationLabel } = await freshInput();
 
-    input.press("space", false);
+    input.press({ name: "space", repeat: false });
     breakout.advance(16);
 
     expect(situationLabel()).toBe("");

@@ -11,8 +11,13 @@ import {
 
 type HeldDirection = Exclude<PaddleDirection, "none">;
 
+export interface PressedKey {
+  readonly name: string;
+  readonly repeat: boolean;
+}
+
 export interface BreakoutTerminalInput {
-  press: (name: string, isRepeat: boolean) => void;
+  press: (key: PressedKey) => void;
   release: (name: string) => void;
   letGoSilentKeys: () => void;
 }
@@ -58,8 +63,8 @@ export function breakoutTerminalInput(now: () => number): BreakoutTerminalInput 
   }
 
   return {
-    press(name, isRepeat) {
-      const fire = isRepeat ? undefined : eventKeys.get(name);
+    press({ name, repeat }) {
+      const fire = repeat ? undefined : eventKeys.get(name);
 
       if (directionKeys.has(name)) {
         const waitMs = heldKeys.has(name) ? repeatGapMs : firstRepeatDelayMs;

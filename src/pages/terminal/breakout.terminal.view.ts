@@ -116,7 +116,7 @@ export function mountBreakoutScreen(renderer: CliRenderer): BreakoutScreen {
       paintBoard(board);
     },
     press(key) {
-      input.press(key.name, key.eventType === "repeat" || key.repeated === true);
+      input.press({ name: key.name, repeat: key.eventType === "repeat" || key.repeated === true });
     },
     release(key) {
       input.release(key.name);

@@ -8,18 +8,13 @@ import {
 } from "@opentui/core";
 
 import {
+  type Box,
   ball,
-  boardHeight,
-  boardWidth,
-  brickAt,
-  columns,
+  board,
+  bricks,
   controlsHint,
   lives,
   paddle,
-  paddleHeight,
-  paddleWidth,
-  paddleY,
-  rows,
   score,
   situationLabel,
 } from "@/modules/breakout";
@@ -34,10 +29,8 @@ export interface BreakoutScreen {
 
 const cellWidth = 5;
 const cellHeight = 10;
-const boardColumns = Math.round(boardWidth / cellWidth);
-const boardRows = Math.round(boardHeight / cellHeight);
-const brickCellWidth = boardWidth / columns / cellWidth;
-const brickCellHeight = boardHeight / rows / cellHeight;
+const boardColumns = Math.round(board.width / cellWidth);
+const boardRows = Math.round(board.height / cellHeight);
 
 const boardColor = RGBA.fromHex("#111111");
 const paddleColor = RGBA.fromHex("#eeeeee");
@@ -54,42 +47,48 @@ function toRow(y: number): number {
   return Math.min(boardRows - 1, Math.max(0, Math.floor(y / cellHeight)));
 }
 
-function paintBoard(board: FrameBufferRenderable): void {
-  const buffer = board.frameBuffer;
+function cellsHigh(box: Box): number {
+  return Math.round((box.bottom - box.top) / cellHeight);
+}
+
+function paintBoard(frame: FrameBufferRenderable): void {
+  const buffer = frame.frameBuffer;
 
   buffer.clear(boardColor);
-  for (let column = 0; column < columns; column++) {
-    for (let row = 0; row < rows; row++) {
-      if (brickAt(column, row)()) {
-        buffer.fillRect(
-          Math.round(column * brickCellWidth),
-          Math.round(row * brickCellHeight),
-          Math.round(brickCellWidth) - 1,
-          Math.round(brickCellHeight),
-          brickColors[row % brickColors.length],
-        );
-      }
+  for (const { box, row, standing } of bricks) {
+    if (standing()) {
+      buffer.fillRect(
+        Math.round(box.left / cellWidth),
+        Math.round(box.top / cellHeight),
+        Math.round((box.right - box.left) / cellWidth) - 1,
+        cellsHigh(box),
+        brickColors[row % brickColors.length],
+      );
     }
   }
 
-  const paddleLeft = toColumn(paddle() - paddleWidth / 2);
-  const paddleRight = toColumn(paddle() + paddleWidth / 2);
+  const paddleEdges = paddle();
+  const paddleLeft = toColumn(paddleEdges.left);
+  const paddleRight = toColumn(paddleEdges.right);
 
   buffer.fillRect(
     paddleLeft,
-    toRow(paddleY),
+    toRow((paddleEdges.top + paddleEdges.bottom) / 2),
     paddleRight - paddleLeft + 1,
-    Math.max(1, Math.round(paddleHeight / cellHeight)),
+    Math.max(1, cellsHigh(paddleEdges)),
     paddleColor,
   );
   buffer.setCell(toColumn(ball().x), toRow(ball().y), "●", ballColor, boardColor);
-  board.requestRender();
+  frame.requestRender();
 }
 
 export function mountBreakoutScreen(renderer: CliRenderer): BreakoutScreen {
   const input = breakoutTerminalInput(() => performance.now());
   const scoreLine = new TextRenderable(renderer, { content: "" });
-  const board = new FrameBufferRenderable(renderer, { width: boardColumns, height: boardRows });
+  const boardFrame = new FrameBufferRenderable(renderer, {
+    width: boardColumns,
+    height: boardRows,
+  });
   const situationLine = new TextRenderable(renderer, { content: "" });
   const hint = new TextRenderable(renderer, {
     content: controlsHint,
@@ -105,7 +104,7 @@ export function mountBreakoutScreen(renderer: CliRenderer): BreakoutScreen {
   });
 
   layout.add(scoreLine);
-  layout.add(board);
+  layout.add(boardFrame);
   layout.add(situationLine);
   layout.add(hint);
   renderer.root.add(layout);
@@ -115,7 +114,7 @@ export function mountBreakoutScreen(renderer: CliRenderer): BreakoutScreen {
       input.letGoSilentKeys();
       scoreLine.content = `Score ${score()}    Lives ${lives()}`;
       situationLine.content = situationLabel();
-      paintBoard(board);
+      paintBoard(boardFrame);
     },
     press(key) {
       input.press({ name: key.name, repeat: key.eventType === "repeat" || key.repeated === true });

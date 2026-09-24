@@ -1,37 +1,52 @@
 import { type Computed, action, atom, computed, reatomEnum } from "@reatom/core";
 
-import { columns, rows } from "../breakout.config.ts";
-import { type Match, type Situation, openingMatch } from "../model/match.model.ts";
+import { ballRadius } from "../breakout.config.ts";
+import { type Box, brickBox, paddleBox } from "../model/board.model.ts";
+import { type Situation, type Vector, openingMatch } from "../model/match.model.ts";
 import { type MatchEvent, type PaddleDirection, step } from "../model/step.model.ts";
 
 const maxElapsedMs = 100;
 
-const match = atom(openingMatch, "_match");
-const pendingEvents = atom<readonly MatchEvent[]>([], "_pendingEvents");
-
-function samePoint(left: Match["ball"], right: Match["ball"]): boolean {
-  return left.x === right.x && left.y === right.y;
+export interface Ball extends Vector {
+  readonly radius: number;
 }
 
-export const ball: Computed<Match["ball"]> = computed((shown?: Match["ball"]) => {
-  const next = match().ball;
+export interface Brick {
+  readonly box: Box;
+  readonly row: number;
+  readonly standing: Computed<boolean>;
+}
 
-  return shown !== undefined && samePoint(shown, next) ? shown : next;
+export const match = atom(openingMatch, "_match");
+const pendingEvents = atom<readonly MatchEvent[]>([], "_pendingEvents");
+
+export const ball: Computed<Ball> = computed((shown?: Ball) => {
+  const { x, y } = match().ball;
+
+  return shown?.x === x && shown.y === y ? shown : { x, y, radius: ballRadius };
 }, "ball");
-export const paddle: Computed<number> = computed(() => match().paddle, "paddle");
+export const paddle: Computed<Box> = computed((shown?: Box) => {
+  const next = paddleBox(match().paddle);
+
+  return shown?.left === next.left ? shown : next;
+}, "paddle");
 export const score: Computed<number> = computed(() => match().score, "score");
 export const lives: Computed<number> = computed(() => match().lives, "lives");
 export const situation: Computed<Situation> = computed(() => match().situation, "situation");
 
-const brickCells = Array.from({ length: columns }, (_cells, column) =>
-  Array.from({ length: rows }, (_cell, row) =>
-    computed(() => match().bricks[column][row], `brick.${column}.${row}`),
+export const bricks: readonly Brick[] = openingMatch().bricks.flatMap((cells, column) =>
+  cells.flatMap((laid, row) =>
+    laid
+      ? [
+          {
+            box: brickBox(column, row),
+            row,
+            standing: computed(() => match().bricks[column][row], `brick.${column}.${row}`),
+          },
+        ]
+      : [],
   ),
 );
-
-export function brickAt(column: number, row: number): Computed<boolean> {
-  return brickCells[column][row];
-}
 
 const directions = ["none", "left", "right"] as const satisfies readonly PaddleDirection[];
 

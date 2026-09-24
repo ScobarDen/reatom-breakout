@@ -1,14 +1,12 @@
 import {
-  ballRadius,
   boardWidth,
   brickRowCount,
   columns,
   firstBrickRow,
-  paddleHeight,
-  paddleY,
   rows,
   startingLives,
 } from "../breakout.config.ts";
+import { servedBall } from "./board.model.ts";
 
 export interface Vector {
   readonly x: number;
@@ -32,10 +30,6 @@ export type Match = MatchCommon &
   );
 
 export type Situation = Match["situation"];
-
-export function servedBall(paddle: number): Vector {
-  return { x: paddle, y: paddleY - paddleHeight / 2 - ballRadius };
-}
 
 export function openingMatch(): Match {
   const paddle = boardWidth / 2;

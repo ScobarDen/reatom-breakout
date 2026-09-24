@@ -1,17 +1,11 @@
 import {
+  type Brick,
   ball,
-  ballRadius,
-  boardHeight,
-  boardWidth,
-  brickAt,
-  columns,
+  board,
+  bricks,
   controlsHint,
   lives,
   paddle,
-  paddleHeight,
-  paddleWidth,
-  paddleY,
-  rows,
   score,
   situationLabel,
 } from "@/modules/breakout";
@@ -19,18 +13,14 @@ import {
 import { breakoutWebInput } from "./vm/breakout.web.vm.ts";
 
 const scale = 2;
-const brickWidth = boardWidth / columns;
-const brickHeight = boardHeight / rows;
 
-function Brick({ column, row }: { column: number; row: number }) {
-  const standing = brickAt(column, row);
-
+function BrickRect({ brick: { box, row, standing } }: { brick: Brick }) {
   return (
     <svg:rect
-      x={column * brickWidth}
-      y={row * brickHeight}
-      width={brickWidth}
-      height={brickHeight}
+      x={box.left}
+      y={box.top}
+      width={box.right - box.left}
+      height={box.bottom - box.top}
       fill={`hsl(${row * 24} 70% 55%)`}
       stroke="#111"
       visibility={() => (standing() ? "visible" : "hidden")}
@@ -41,22 +31,22 @@ function Brick({ column, row }: { column: number; row: number }) {
 function Board() {
   return (
     <svg:svg
-      viewBox={`0 0 ${boardWidth} ${boardHeight}`}
-      width={boardWidth * scale}
-      height={boardHeight * scale}
+      viewBox={`0 0 ${board.width} ${board.height}`}
+      width={board.width * scale}
+      height={board.height * scale}
       style={{ background: "#111", display: "block" }}
     >
-      {Array.from({ length: columns }, (_cells, column) =>
-        Array.from({ length: rows }, (_cell, row) => <Brick column={column} row={row} />),
-      )}
+      {bricks.map((brick) => (
+        <BrickRect brick={brick} />
+      ))}
       <svg:rect
-        x={() => paddle() - paddleWidth / 2}
-        y={paddleY - paddleHeight / 2}
-        width={paddleWidth}
-        height={paddleHeight}
+        x={() => paddle().left}
+        y={() => paddle().top}
+        width={() => paddle().right - paddle().left}
+        height={() => paddle().bottom - paddle().top}
         fill="#eee"
       />
-      <svg:circle cx={() => ball().x} cy={() => ball().y} r={ballRadius} fill="#fff" />
+      <svg:circle cx={() => ball().x} cy={() => ball().y} r={() => ball().radius} fill="#fff" />
     </svg:svg>
   );
 }

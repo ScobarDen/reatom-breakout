@@ -1,12 +1,7 @@
-import {
-  boardWidth,
-  brickPoints,
-  launchVelocity,
-  paddleSpeed,
-  paddleWidth,
-} from "../breakout.config.ts";
+import { brickPoints, launchVelocity, paddleSpeed } from "../breakout.config.ts";
+import { keepPaddleOnBoard, servedBall } from "./board.model.ts";
 import { fly } from "./flight.model.ts";
-import { type Match, openingMatch, servedBall } from "./match.model.ts";
+import { type Match, openingMatch } from "./match.model.ts";
 
 export type PaddleDirection = "left" | "right" | "none";
 export type MatchEvent = "launch" | "pause" | "resume" | "new-match";
@@ -22,9 +17,7 @@ type Airborne = Extract<Match, { velocity: unknown }>;
 const directionSign: Record<PaddleDirection, number> = { left: -1, right: 1, none: 0 };
 
 function movePaddle(paddle: number, direction: PaddleDirection, elapsedMs: number): number {
-  const moved = paddle + directionSign[direction] * paddleSpeed * elapsedMs;
-
-  return Math.min(Math.max(moved, paddleWidth / 2), boardWidth - paddleWidth / 2);
+  return keepPaddleOnBoard(paddle + directionSign[direction] * paddleSpeed * elapsedMs);
 }
 
 function playFlight(match: Airborne, paddle: number, elapsedMs: number): Match {

@@ -1,19 +1,13 @@
 import { type Computed, context, sleep } from "@reatom/core";
 
-import { columns, paddleWidth, rows } from "../breakout.config.ts";
+import { paddleBox } from "../model/board.model.ts";
 import { openingMatch } from "../model/match.model.ts";
 import * as vm from "./breakout.vm.ts";
 
 type Spy = ReturnType<typeof vi.fn>;
 
-const everyCell = Array.from({ length: columns }, (_cells, column) =>
-  Array.from({ length: rows }, (_cell, row): [number, number] => [column, row]),
-).flat();
-
-function brickPicture(): boolean[][] {
-  return Array.from({ length: columns }, (_cells, column) =>
-    Array.from({ length: rows }, (_cell, row) => vm.brickAt(column, row)()),
-  );
+function fallenBricks(): vm.Brick[] {
+  return vm.bricks.filter((brick) => !brick.standing());
 }
 
 function watch(target: Computed<unknown>): Spy {
@@ -25,10 +19,10 @@ function watch(target: Computed<unknown>): Spy {
   return spy;
 }
 
-function wokenBricks(): () => [number, number][] {
-  const spies = everyCell.map(([column, row]) => watch(vm.brickAt(column, row)));
+function wokenBricks(): () => vm.Brick[] {
+  const spies = vm.bricks.map((brick) => watch(brick.standing));
 
-  return () => everyCell.filter((_cell, index) => spies[index].mock.calls.length > 0);
+  return () => vm.bricks.filter((_brick, index) => spies[index].mock.calls.length > 0);
 }
 
 function launchServe(): void {
@@ -47,7 +41,13 @@ function paddleAfter(elapsedMs: number): number {
   vm.paddleSteering.setLeft();
   vm.advance(elapsedMs);
 
-  return vm.paddle();
+  return vm.paddle().left;
+}
+
+function paddleCentre(): number {
+  const { left, right } = vm.paddle();
+
+  return (left + right) / 2;
 }
 
 beforeEach(() => {
@@ -61,20 +61,13 @@ describe("the public surface", () => {
     expect(Object.keys(breakout).toSorted()).toEqual([
       "advance",
       "ball",
-      "ballRadius",
-      "boardHeight",
-      "boardWidth",
-      "brickAt",
-      "columns",
+      "board",
+      "bricks",
       "controlsHint",
       "lives",
       "matchControls",
       "paddle",
       "paddleDirection",
-      "paddleHeight",
-      "paddleWidth",
-      "paddleY",
-      "rows",
       "score",
       "situation",
       "situationLabel",
@@ -89,9 +82,10 @@ describe("before the first frame", () => {
     expect(vm.situation()).toBe("serve");
     expect(vm.lives()).toBe(opening.lives);
     expect(vm.score()).toBe(0);
-    expect(vm.paddle()).toBe(opening.paddle);
-    expect(vm.ball()).toEqual(opening.ball);
-    expect(brickPicture()).toEqual(opening.bricks);
+    expect(vm.paddle()).toEqual(paddleBox(opening.paddle));
+    expect(vm.ball()).toMatchObject(opening.ball);
+    expect(vm.bricks).toHaveLength(50);
+    expect(fallenBricks()).toEqual([]);
   });
 });
 
@@ -178,8 +172,8 @@ describe("the picture diff", () => {
     vm.paddleSteering.setRight();
     vm.advance(16);
 
-    expect(vm.paddle()).toBeGreaterThan(opening.paddle);
-    expect(vm.ball()).toEqual({ x: vm.paddle(), y: opening.ball.y });
+    expect(paddleCentre()).toBeGreaterThan(opening.paddle);
+    expect(vm.ball()).toMatchObject({ x: paddleCentre(), y: opening.ball.y });
   });
 
   test("wakes the moved pieces once, on a microtask after advance", async () => {
@@ -220,9 +214,7 @@ describe("the picture diff", () => {
     playUntilScore();
     await sleep(0);
 
-    const fallen = everyCell.filter(
-      ([column, row]) => openingMatch().bricks[column][row] && !vm.brickAt(column, row)(),
-    );
+    const fallen = fallenBricks();
 
     expect(vm.score()).toBeGreaterThan(0);
     expect(fallen.length).toBeGreaterThan(0);
@@ -254,41 +246,88 @@ describe("the paddle direction", () => {
     vm.paddleSteering.setRight();
     vm.advance(16);
 
-    const held = vm.paddle();
+    const held = paddleCentre();
 
     vm.paddleSteering.setNone();
     vm.advance(16);
 
     expect(held).toBeGreaterThan(opening.paddle);
-    expect(vm.paddle()).toBe(held);
+    expect(paddleCentre()).toBe(held);
   });
 });
 
 describe("a new match", () => {
-  test("writes the opening layout into the same brick atoms", async () => {
-    const before = everyCell.map(([column, row]) => vm.brickAt(column, row));
-
+  test("stands the fallen bricks up again and wakes only them", async () => {
     launchServe();
     playUntilScore();
 
     expect(vm.score()).toBeGreaterThan(0);
 
-    const fallen = everyCell.filter(
-      ([column, row]) => openingMatch().bricks[column][row] && !vm.brickAt(column, row)(),
-    );
+    const fallen = fallenBricks();
     const bricks = wokenBricks();
 
     vm.newMatch();
     vm.advance(16);
     await sleep(0);
 
-    const after = everyCell.map(([column, row]) => vm.brickAt(column, row));
-
-    expect(after.every((brick, index) => brick === before[index])).toBe(true);
     expect(bricks()).toEqual(fallen);
-    expect(brickPicture()).toEqual(openingMatch().bricks);
+    expect(fallenBricks()).toEqual([]);
     expect(vm.score()).toBe(0);
     expect(vm.situation()).toBe("serve");
+  });
+});
+
+describe("the drawn board", () => {
+  test("bounces the ball off the drawn bottom of a brick", () => {
+    const lowest = Math.max(...vm.bricks.map((brick) => brick.box.bottom));
+    const target = vm.bricks.find((brick) => brick.box.bottom === lowest)!;
+    const x = (target.box.left + target.box.right) / 2;
+
+    vm.match.set({
+      ...openingMatch(),
+      situation: "flight",
+      ball: { x, y: target.box.bottom + vm.ball().radius + 5 },
+      velocity: { x: 0, y: -0.1 },
+    });
+    vm.advance(100);
+
+    expect(target.standing()).toBe(false);
+    expect(vm.ball().y).toBeCloseTo(target.box.bottom + vm.ball().radius + 5);
+  });
+
+  test("bounces the ball off the drawn side of a brick", () => {
+    const target = vm.bricks.find((brick) => brick.box.left === 0 && brick.row === 6)!;
+    const y = (target.box.top + target.box.bottom) / 2;
+
+    vm.match.set({
+      ...openingMatch(),
+      situation: "flight",
+      bricks: openingMatch().bricks.map((cells, column) =>
+        cells.map((_laid, row) => row === 6 && (column === 0 || column === 9)),
+      ),
+      ball: { x: target.box.right + vm.ball().radius + 5, y },
+      velocity: { x: -0.1, y: 0 },
+    });
+    vm.advance(100);
+
+    expect(target.standing()).toBe(false);
+    expect(vm.ball().x).toBeCloseTo(target.box.right + vm.ball().radius + 5);
+  });
+
+  test("bounces the ball off the drawn top of the paddle", () => {
+    const { top } = vm.paddle();
+    const x = paddleCentre();
+
+    vm.match.set({
+      ...openingMatch(),
+      situation: "flight",
+      ball: { x, y: top - vm.ball().radius - 5 },
+      velocity: { x: 0, y: 0.1 },
+    });
+    vm.advance(100);
+
+    expect(vm.situation()).toBe("flight");
+    expect(vm.ball().y).toBeCloseTo(top - vm.ball().radius - 5);
   });
 });
 
@@ -300,6 +339,6 @@ describe("the tick", () => {
 
     expect(stalled).toBe(capped);
     expect(shorter).toBeGreaterThan(capped);
-    expect(stalled).toBeGreaterThan(paddleWidth / 2);
+    expect(stalled).toBeGreaterThan(0);
   });
 });

@@ -1,14 +1,5 @@
-import {
-  ballRadius,
-  boardHeight,
-  boardWidth,
-  columns,
-  maxPaddleBounceAngle,
-  paddleHeight,
-  paddleWidth,
-  paddleY,
-  rows,
-} from "../breakout.config.ts";
+import { ballRadius, boardHeight, boardWidth, maxPaddleBounceAngle } from "../breakout.config.ts";
+import { type Box, brickBox, paddleBox } from "./board.model.ts";
 import type { Bricks, Vector } from "./match.model.ts";
 
 interface Ball {
@@ -32,8 +23,6 @@ export interface Flown {
   readonly ending?: "cleared" | "bottom";
 }
 
-const cellWidth = boardWidth / columns;
-const cellHeight = boardHeight / rows;
 const simultaneity = 1e-9;
 
 function timeTo(target: number, from: number, speed: number): number {
@@ -66,13 +55,6 @@ function wallContacts({ position, velocity }: Ball): Contact[] {
   }
 
   return contacts;
-}
-
-interface Box {
-  readonly left: number;
-  readonly right: number;
-  readonly top: number;
-  readonly bottom: number;
 }
 
 interface Sweep {
@@ -115,12 +97,7 @@ function sweepInto({ position, velocity }: Ball, box: Box): Sweep {
 }
 
 function brickContact(ball: Ball, column: number, row: number): Contact | undefined {
-  const { enter, exit, enterX, enterY } = sweepInto(ball, {
-    left: column * cellWidth,
-    right: (column + 1) * cellWidth,
-    top: row * cellHeight,
-    bottom: (row + 1) * cellHeight,
-  });
+  const { enter, exit, enterX, enterY } = sweepInto(ball, brickBox(column, row));
 
   if (enter < 0 || enter >= exit) {
     return undefined;
@@ -143,12 +120,7 @@ function paddleContact(ball: Ball, paddle: number): Contact[] {
   if (ball.velocity.y <= 0) {
     return [];
   }
-  const { enter, exit } = sweepInto(ball, {
-    left: paddle - paddleWidth / 2,
-    right: paddle + paddleWidth / 2,
-    top: paddleY - paddleHeight / 2,
-    bottom: paddleY + paddleHeight / 2,
-  });
+  const { enter, exit } = sweepInto(ball, paddleBox(paddle));
 
   if (enter >= exit || exit <= 0) {
     return [];
@@ -158,7 +130,8 @@ function paddleContact(ball: Ball, paddle: number): Contact[] {
 }
 
 function paddleBounce({ position, velocity }: Ball, paddle: number): Vector {
-  const reach = paddleWidth / 2 + ballRadius;
+  const { left, right } = paddleBox(paddle);
+  const reach = (right - left) / 2 + ballRadius;
   const offset = Math.min(Math.max((position.x - paddle) / reach, -1), 1);
   const angle = offset * maxPaddleBounceAngle;
   const speed = Math.hypot(velocity.x, velocity.y);

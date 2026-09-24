@@ -1,17 +1,9 @@
+export { board } from "./model/board.model.ts";
 export {
-  ballRadius,
-  boardHeight,
-  boardWidth,
-  columns,
-  paddleHeight,
-  paddleWidth,
-  paddleY,
-  rows,
-} from "./breakout.config.ts";
-export {
+  type Brick,
   advance,
   ball,
-  brickAt,
+  bricks,
   lives,
   paddle,
   paddleDirection,
@@ -25,5 +17,6 @@ export {
   matchControls,
   situationLabel,
 } from "./vm/controls.vm.ts";
+export type { Box } from "./model/board.model.ts";
 export type { Situation } from "./model/match.model.ts";
 export type { PaddleDirection } from "./model/step.model.ts";

@@ -63,17 +63,13 @@ describe("the public surface", () => {
       "brickAt",
       "columns",
       "controlsHint",
-      "launch",
       "lives",
       "matchControls",
-      "newMatch",
       "paddle",
       "paddleDirection",
       "paddleHeight",
       "paddleWidth",
       "paddleY",
-      "pause",
-      "resume",
       "rows",
       "score",
       "situation",
@@ -188,7 +184,7 @@ describe("the picture diff", () => {
     const breakout = await freshBreakout();
     const opening = openingMatch();
 
-    breakout.paddleDirection.setRight();
+    breakout.paddleSteering.setRight();
     breakout.advance(16);
 
     expect(breakout.paddle()).toBeGreaterThan(opening.paddle);
@@ -201,7 +197,7 @@ describe("the picture diff", () => {
     const still = [watch(breakout.score), watch(breakout.lives), watch(breakout.situation)];
     const bricks = wokenBricks(breakout);
 
-    breakout.paddleDirection.setRight();
+    breakout.paddleSteering.setRight();
     breakout.advance(16);
 
     expect(moved.map((spy) => spy.mock.calls.length)).toEqual([0, 0]);
@@ -250,7 +246,7 @@ describe("the picture diff", () => {
   test("keeps the held paddle direction across ticks", async () => {
     const breakout = await freshBreakout();
 
-    breakout.paddleDirection.setLeft();
+    breakout.paddleSteering.setLeft();
 
     const direction = watch(breakout.paddleDirection);
 
@@ -274,12 +270,12 @@ describe("the paddle direction", () => {
     const breakout = await freshBreakout();
     const opening = openingMatch();
 
-    breakout.paddleDirection.setRight();
+    breakout.paddleSteering.setRight();
     breakout.advance(16);
 
     const held = breakout.paddle();
 
-    breakout.paddleDirection.setNone();
+    breakout.paddleSteering.setNone();
     breakout.advance(16);
 
     expect(held).toBeGreaterThan(opening.paddle);
@@ -320,7 +316,7 @@ describe("the tick", () => {
   async function paddleAfter(elapsedMs: number): Promise<number> {
     const breakout = await freshBreakout();
 
-    breakout.paddleDirection.setLeft();
+    breakout.paddleSteering.setLeft();
     breakout.advance(elapsedMs);
 
     return breakout.paddle();

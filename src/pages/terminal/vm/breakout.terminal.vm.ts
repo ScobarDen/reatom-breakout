@@ -14,7 +14,7 @@ export interface BreakoutTerminalInput {
 const firstRepeatDelayMs = 600;
 const repeatGapMs = 100;
 
-const matchKeys = new Map<string, MatchKey>([
+const hostKeys = new Map<string, MatchKey>([
   ["left", "left"],
   ["a", "a"],
   ["right", "right"],
@@ -32,7 +32,7 @@ export function breakoutTerminalInput(now: () => number): BreakoutTerminalInput 
 
   return {
     press({ name, repeat }) {
-      const key = matchKeys.get(name);
+      const key = hostKeys.get(name);
 
       if (key === undefined) {
         return;
@@ -44,7 +44,7 @@ export function breakoutTerminalInput(now: () => number): BreakoutTerminalInput 
       controls.press(key, repeat);
     },
     release(name) {
-      const key = matchKeys.get(name);
+      const key = hostKeys.get(name);
 
       reportsRelease = true;
       if (key !== undefined) {

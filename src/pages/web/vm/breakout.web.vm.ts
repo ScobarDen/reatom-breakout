@@ -13,7 +13,7 @@ export interface BreakoutWebInput {
   letGo: () => void;
 }
 
-const matchKeys: Partial<Record<string, MatchKey>> = {
+const hostKeys: Partial<Record<string, MatchKey>> = {
   ArrowLeft: "left",
   KeyA: "a",
   ArrowRight: "right",
@@ -29,7 +29,7 @@ export function breakoutWebInput(): BreakoutWebInput {
 
   return {
     press({ code, repeat }) {
-      const key = matchKeys[code];
+      const key = hostKeys[code];
 
       if (key === undefined) {
         return "ignored";
@@ -38,7 +38,7 @@ export function breakoutWebInput(): BreakoutWebInput {
       return controls.press(key, repeat) ? "claimed" : "ignored";
     },
     release(code) {
-      const key = matchKeys[code];
+      const key = hostKeys[code];
 
       if (key !== undefined) {
         controls.release(key);

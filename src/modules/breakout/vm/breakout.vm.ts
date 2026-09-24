@@ -32,7 +32,8 @@ export function brickAt(column: number, row: number): Computed<boolean> {
 
 const directions = ["none", "left", "right"] as const satisfies readonly PaddleDirection[];
 
-export const paddleDirection = reatomEnum(directions, "paddleDirection");
+export const paddleSteering = reatomEnum(directions, "paddleDirection");
+export const paddleDirection: Computed<PaddleDirection> = paddleSteering;
 
 export const launch = action(() => {
   pending.push("launch");

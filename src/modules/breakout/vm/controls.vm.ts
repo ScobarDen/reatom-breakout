@@ -1,6 +1,6 @@
 import type { Situation } from "../model/match.model.ts";
 import type { PaddleDirection } from "../model/step.model.ts";
-import { launch, newMatch, paddleDirection, pause, resume, situation } from "./breakout.vm.ts";
+import { launch, newMatch, paddleSteering, pause, resume, situation } from "./breakout.vm.ts";
 
 type HeldDirection = Exclude<PaddleDirection, "none">;
 
@@ -47,7 +47,7 @@ export function matchControls(): MatchControls {
   function holdLatestDirection(): void {
     const latest = [...heldKeys].at(-1);
 
-    paddleDirection.set(latest === undefined ? "none" : (directionKeys.get(latest) ?? "none"));
+    paddleSteering.set(latest === undefined ? "none" : (directionKeys.get(latest) ?? "none"));
   }
 
   return {

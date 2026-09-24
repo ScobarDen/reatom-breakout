@@ -1,25 +1,12 @@
 import { context } from "@reatom/core";
 
-import type * as BreakoutModule from "@/modules/breakout";
+import * as breakout from "@/modules/breakout";
 
-import type * as WebInput from "./breakout.web.vm.ts";
+import { breakoutWebInput } from "./breakout.web.vm.ts";
 
-type Breakout = typeof BreakoutModule;
-
-interface Fixture {
-  readonly breakout: Breakout;
-  readonly input: WebInput.BreakoutWebInput;
-}
-
-async function freshInput(): Promise<Fixture> {
+beforeEach(() => {
   context.reset();
-  vi.resetModules();
-
-  const breakout = await import("@/modules/breakout");
-  const { breakoutWebInput } = await import("./breakout.web.vm.ts");
-
-  return { breakout, input: breakoutWebInput() };
-}
+});
 
 describe("the web layout", () => {
   test.each([
@@ -27,8 +14,8 @@ describe("the web layout", () => {
     ["KeyA", "left"],
     ["ArrowRight", "right"],
     ["KeyD", "right"],
-  ])("%s steers the paddle %s", async (code, direction) => {
-    const { breakout, input } = await freshInput();
+  ])("%s steers the paddle %s", (code, direction) => {
+    const input = breakoutWebInput();
 
     input.press({ code, repeat: false });
 
@@ -39,8 +26,8 @@ describe("the web layout", () => {
     expect(breakout.paddleDirection()).toBe("none");
   });
 
-  test("Space launches the serve", async () => {
-    const { breakout, input } = await freshInput();
+  test("Space launches the serve", () => {
+    const input = breakoutWebInput();
 
     input.press({ code: "Space", repeat: false });
     breakout.advance(16);
@@ -48,8 +35,8 @@ describe("the web layout", () => {
     expect(breakout.situation()).toBe("flight");
   });
 
-  test("KeyP pauses and KeyR resumes", async () => {
-    const { breakout, input } = await freshInput();
+  test("KeyP pauses and KeyR resumes", () => {
+    const input = breakoutWebInput();
 
     input.press({ code: "KeyP", repeat: false });
     breakout.advance(16);
@@ -62,8 +49,8 @@ describe("the web layout", () => {
     expect(breakout.situation()).toBe("serve");
   });
 
-  test("KeyN starts a new match", async () => {
-    const { breakout, input } = await freshInput();
+  test("KeyN starts a new match", () => {
+    const input = breakoutWebInput();
 
     input.press({ code: "Space", repeat: false });
     breakout.advance(16);
@@ -79,16 +66,16 @@ describe("the web layout", () => {
     ["an event key", "Space", false, "claimed"],
     ["a repeated event key", "Space", true, "ignored"],
     ["an unbound key", "KeyQ", false, "ignored"],
-  ])("%s: %s repeat=%s is %s", async (_name, code, repeat, outcome) => {
-    const { input } = await freshInput();
+  ])("%s: %s repeat=%s is %s", (_name, code, repeat, outcome) => {
+    const input = breakoutWebInput();
 
     expect(input.press({ code, repeat })).toBe(outcome);
   });
 });
 
 describe("losing focus", () => {
-  test("lets every held key go", async () => {
-    const { breakout, input } = await freshInput();
+  test("lets every held key go", () => {
+    const input = breakoutWebInput();
 
     input.press({ code: "ArrowLeft", repeat: false });
     input.press({ code: "KeyD", repeat: false });

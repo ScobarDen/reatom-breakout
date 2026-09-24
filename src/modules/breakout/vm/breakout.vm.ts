@@ -1,4 +1,4 @@
-import { type Atom, type Computed, action, atom, reatomEnum } from "@reatom/core";
+import { type Computed, action, atom, computed, reatomEnum } from "@reatom/core";
 
 import { columns, rows } from "../breakout.config.ts";
 import { type Match, type Situation, openingMatch } from "../model/match.model.ts";
@@ -6,28 +6,31 @@ import { type MatchEvent, type PaddleDirection, step } from "../model/step.model
 
 const maxElapsedMs = 100;
 
-let match = openingMatch();
-let pending: MatchEvent[] = [];
+const match = atom(openingMatch, "_match");
+const pendingEvents = atom<readonly MatchEvent[]>([], "_pendingEvents");
 
-const ballAtom = atom(match.ball, "ball");
-const paddleAtom = atom(match.paddle, "paddle");
-const scoreAtom = atom(match.score, "score");
-const livesAtom = atom(match.lives, "lives");
-const situationAtom = atom(match.situation, "situation");
-const brickAtoms = Array.from({ length: columns }, (_cells, column) =>
+function samePoint(left: Match["ball"], right: Match["ball"]): boolean {
+  return left.x === right.x && left.y === right.y;
+}
+
+export const ball: Computed<Match["ball"]> = computed((shown?: Match["ball"]) => {
+  const next = match().ball;
+
+  return shown !== undefined && samePoint(shown, next) ? shown : next;
+}, "ball");
+export const paddle: Computed<number> = computed(() => match().paddle, "paddle");
+export const score: Computed<number> = computed(() => match().score, "score");
+export const lives: Computed<number> = computed(() => match().lives, "lives");
+export const situation: Computed<Situation> = computed(() => match().situation, "situation");
+
+const brickCells = Array.from({ length: columns }, (_cells, column) =>
   Array.from({ length: rows }, (_cell, row) =>
-    atom(match.bricks[column][row], `brick.${column}.${row}`),
+    computed(() => match().bricks[column][row], `brick.${column}.${row}`),
   ),
 );
 
-export const ball: Computed<Match["ball"]> = ballAtom;
-export const paddle: Computed<number> = paddleAtom;
-export const score: Computed<number> = scoreAtom;
-export const lives: Computed<number> = livesAtom;
-export const situation: Computed<Situation> = situationAtom;
-
 export function brickAt(column: number, row: number): Computed<boolean> {
-  return brickAtoms[column][row];
+  return brickCells[column][row];
 }
 
 const directions = ["none", "left", "right"] as const satisfies readonly PaddleDirection[];
@@ -35,54 +38,32 @@ const directions = ["none", "left", "right"] as const satisfies readonly PaddleD
 export const paddleSteering = reatomEnum(directions, "paddleDirection");
 export const paddleDirection: Computed<PaddleDirection> = paddleSteering;
 
+function queue(event: MatchEvent): void {
+  pendingEvents.set((events) => [...events, event]);
+}
+
 export const launch = action(() => {
-  pending.push("launch");
+  queue("launch");
 }, "launch");
 export const pause = action(() => {
-  pending.push("pause");
+  queue("pause");
 }, "pause");
 export const resume = action(() => {
-  pending.push("resume");
+  queue("resume");
 }, "resume");
 export const newMatch = action(() => {
-  pending.push("new-match");
+  queue("new-match");
 }, "newMatch");
 
-function samePoint(left: Match["ball"], right: Match["ball"]): boolean {
-  return left.x === right.x && left.y === right.y;
-}
-
-function show<State>(
-  target: Atom<State>,
-  value: State,
-  same: (left: State, right: State) => boolean = Object.is,
-): void {
-  if (!same(target(), value)) {
-    target.set(value);
-  }
-}
-
-function publish(next: Match): void {
-  show(ballAtom, next.ball, samePoint);
-  show(paddleAtom, next.paddle);
-  show(scoreAtom, next.score);
-  show(livesAtom, next.lives);
-  show(situationAtom, next.situation);
-  for (const [column, cells] of brickAtoms.entries()) {
-    for (const [row, brick] of cells.entries()) {
-      show(brick, next.bricks[column][row]);
-    }
-  }
-}
-
 export function advance(elapsedMs: number): void {
-  const events = pending;
+  const events = pendingEvents();
 
-  pending = [];
-  match = step(match, {
-    direction: paddleDirection(),
-    events,
-    elapsedMs: Math.min(elapsedMs, maxElapsedMs),
-  });
-  publish(match);
+  pendingEvents.set([]);
+  match.set(
+    step(match(), {
+      direction: paddleDirection(),
+      events,
+      elapsedMs: Math.min(elapsedMs, maxElapsedMs),
+    }),
+  );
 }

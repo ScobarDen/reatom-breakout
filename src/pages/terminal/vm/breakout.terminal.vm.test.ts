@@ -1,27 +1,23 @@
 import { context } from "@reatom/core";
 
-import type * as BreakoutModule from "@/modules/breakout";
+import * as breakout from "@/modules/breakout";
 
-import type * as TerminalInput from "./breakout.terminal.vm.ts";
-
-type Breakout = typeof BreakoutModule;
+import { type BreakoutTerminalInput, breakoutTerminalInput } from "./breakout.terminal.vm.ts";
 
 interface Fixture {
-  readonly breakout: Breakout;
-  readonly input: TerminalInput.BreakoutTerminalInput;
+  readonly input: BreakoutTerminalInput;
   readonly clock: { nowMs: number };
 }
 
-async function freshInput(): Promise<Fixture> {
-  context.reset();
-  vi.resetModules();
-
-  const breakout = await import("@/modules/breakout");
-  const { breakoutTerminalInput } = await import("./breakout.terminal.vm.ts");
+function inputWithClock(): Fixture {
   const clock = { nowMs: 0 };
 
-  return { breakout, input: breakoutTerminalInput(() => clock.nowMs), clock };
+  return { input: breakoutTerminalInput(() => clock.nowMs), clock };
 }
+
+beforeEach(() => {
+  context.reset();
+});
 
 describe("the terminal layout", () => {
   test.each([
@@ -29,8 +25,8 @@ describe("the terminal layout", () => {
     ["a", "left"],
     ["right", "right"],
     ["d", "right"],
-  ])("%s steers the paddle %s", async (name, direction) => {
-    const { breakout, input } = await freshInput();
+  ])("%s steers the paddle %s", (name, direction) => {
+    const { input } = inputWithClock();
 
     input.press({ name, repeat: false });
 
@@ -41,8 +37,8 @@ describe("the terminal layout", () => {
     expect(breakout.paddleDirection()).toBe("none");
   });
 
-  test("space launches the serve", async () => {
-    const { breakout, input } = await freshInput();
+  test("space launches the serve", () => {
+    const { input } = inputWithClock();
 
     input.press({ name: "space", repeat: false });
     breakout.advance(16);
@@ -50,8 +46,8 @@ describe("the terminal layout", () => {
     expect(breakout.situation()).toBe("flight");
   });
 
-  test("p pauses and r resumes", async () => {
-    const { breakout, input } = await freshInput();
+  test("p pauses and r resumes", () => {
+    const { input } = inputWithClock();
 
     input.press({ name: "p", repeat: false });
     breakout.advance(16);
@@ -64,8 +60,8 @@ describe("the terminal layout", () => {
     expect(breakout.situation()).toBe("serve");
   });
 
-  test("n starts a new match", async () => {
-    const { breakout, input } = await freshInput();
+  test("n starts a new match", () => {
+    const { input } = inputWithClock();
 
     input.press({ name: "space", repeat: false });
     breakout.advance(16);
@@ -75,8 +71,8 @@ describe("the terminal layout", () => {
     expect(breakout.situation()).toBe("serve");
   });
 
-  test("an unbound key leaves the paddle alone", async () => {
-    const { breakout, input } = await freshInput();
+  test("an unbound key leaves the paddle alone", () => {
+    const { input } = inputWithClock();
 
     input.press({ name: "left", repeat: false });
     input.press({ name: "q", repeat: false });
@@ -87,8 +83,8 @@ describe("the terminal layout", () => {
 });
 
 describe("a terminal that reports no releases", () => {
-  test("lets a key go once the first key repeat is overdue", async () => {
-    const { breakout, input, clock } = await freshInput();
+  test("lets a key go once the first key repeat is overdue", () => {
+    const { input, clock } = inputWithClock();
 
     input.press({ name: "left", repeat: false });
     clock.nowMs = 599;
@@ -102,8 +98,8 @@ describe("a terminal that reports no releases", () => {
     expect(breakout.paddleDirection()).toBe("none");
   });
 
-  test("keeps a key while its repeats keep coming", async () => {
-    const { breakout, input, clock } = await freshInput();
+  test("keeps a key while its repeats keep coming", () => {
+    const { input, clock } = inputWithClock();
 
     input.press({ name: "left", repeat: false });
     clock.nowMs = 550;
@@ -119,8 +115,8 @@ describe("a terminal that reports no releases", () => {
     expect(breakout.paddleDirection()).toBe("none");
   });
 
-  test("falls back to the key still held when the latest one goes silent", async () => {
-    const { breakout, input, clock } = await freshInput();
+  test("falls back to the key still held when the latest one goes silent", () => {
+    const { input, clock } = inputWithClock();
 
     input.press({ name: "a", repeat: false });
     clock.nowMs = 10;
@@ -135,8 +131,8 @@ describe("a terminal that reports no releases", () => {
 });
 
 describe("a terminal that reports releases", () => {
-  test("holds a key until its release however long it stays silent", async () => {
-    const { breakout, input, clock } = await freshInput();
+  test("holds a key until its release however long it stays silent", () => {
+    const { input, clock } = inputWithClock();
 
     input.press({ name: "left", repeat: false });
     input.press({ name: "right", repeat: false });

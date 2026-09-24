@@ -2,25 +2,17 @@ import { type Computed, context, sleep } from "@reatom/core";
 
 import { columns, paddleWidth, rows } from "../breakout.config.ts";
 import { openingMatch } from "../model/match.model.ts";
-import type * as ViewModel from "./breakout.vm.ts";
+import * as vm from "./breakout.vm.ts";
 
-type Breakout = typeof ViewModel;
 type Spy = ReturnType<typeof vi.fn>;
 
 const everyCell = Array.from({ length: columns }, (_cells, column) =>
   Array.from({ length: rows }, (_cell, row): [number, number] => [column, row]),
 ).flat();
 
-function freshBreakout(): Promise<Breakout> {
-  context.reset();
-  vi.resetModules();
-
-  return import("./breakout.vm.ts");
-}
-
-function brickPicture(breakout: Breakout): boolean[][] {
+function brickPicture(): boolean[][] {
   return Array.from({ length: columns }, (_cells, column) =>
-    Array.from({ length: rows }, (_cell, row) => breakout.brickAt(column, row)()),
+    Array.from({ length: rows }, (_cell, row) => vm.brickAt(column, row)()),
   );
 }
 
@@ -33,22 +25,34 @@ function watch(target: Computed<unknown>): Spy {
   return spy;
 }
 
-function wokenBricks(breakout: Breakout): () => [number, number][] {
-  const spies = everyCell.map(([column, row]) => watch(breakout.brickAt(column, row)));
+function wokenBricks(): () => [number, number][] {
+  const spies = everyCell.map(([column, row]) => watch(vm.brickAt(column, row)));
 
   return () => everyCell.filter((_cell, index) => spies[index].mock.calls.length > 0);
 }
 
-function launchServe(breakout: Breakout): void {
-  breakout.launch();
-  breakout.advance(0);
+function launchServe(): void {
+  vm.launch();
+  vm.advance(0);
 }
 
-function playUntilScore(breakout: Breakout): void {
-  for (let frame = 0; frame < 500 && breakout.score() === 0; frame++) {
-    breakout.advance(16);
+function playUntilScore(): void {
+  for (let frame = 0; frame < 500 && vm.score() === 0; frame++) {
+    vm.advance(16);
   }
 }
+
+function paddleAfter(elapsedMs: number): number {
+  context.reset();
+  vm.paddleSteering.setLeft();
+  vm.advance(elapsedMs);
+
+  return vm.paddle();
+}
+
+beforeEach(() => {
+  context.reset();
+});
 
 describe("the public surface", () => {
   test("exposes the picture, the input and the tick, and no match", async () => {
@@ -79,126 +83,112 @@ describe("the public surface", () => {
 });
 
 describe("before the first frame", () => {
-  test("holds the opening serve", async () => {
-    const breakout = await freshBreakout();
+  test("holds the opening serve", () => {
     const opening = openingMatch();
 
-    expect(breakout.situation()).toBe("serve");
-    expect(breakout.lives()).toBe(opening.lives);
-    expect(breakout.score()).toBe(0);
-    expect(breakout.paddle()).toBe(opening.paddle);
-    expect(breakout.ball()).toEqual(opening.ball);
-    expect(brickPicture(breakout)).toEqual(opening.bricks);
+    expect(vm.situation()).toBe("serve");
+    expect(vm.lives()).toBe(opening.lives);
+    expect(vm.score()).toBe(0);
+    expect(vm.paddle()).toBe(opening.paddle);
+    expect(vm.ball()).toEqual(opening.ball);
+    expect(brickPicture()).toEqual(opening.bricks);
   });
 });
 
 describe("the batch", () => {
   test("waits for the tick before the step plays it", async () => {
-    const breakout = await freshBreakout();
-
-    breakout.launch();
+    vm.launch();
     await sleep(0);
 
-    expect(breakout.situation()).toBe("serve");
+    expect(vm.situation()).toBe("serve");
 
-    breakout.advance(16);
+    vm.advance(16);
 
-    expect(breakout.situation()).toBe("flight");
+    expect(vm.situation()).toBe("flight");
   });
 
-  test("keeps the calls in order for the step", async () => {
-    const breakout = await freshBreakout();
+  test("keeps the calls in order for the step", () => {
+    vm.pause();
+    vm.launch();
+    vm.advance(16);
 
-    breakout.pause();
-    breakout.launch();
-    breakout.advance(16);
+    expect(vm.situation()).toBe("paused-serve");
 
-    expect(breakout.situation()).toBe("paused-serve");
+    vm.resume();
+    vm.launch();
+    vm.advance(16);
 
-    breakout.resume();
-    breakout.launch();
-    breakout.advance(16);
-
-    expect(breakout.situation()).toBe("flight");
+    expect(vm.situation()).toBe("flight");
   });
 
-  test("drops what the new match threw away", async () => {
-    const breakout = await freshBreakout();
+  test("drops what the new match threw away", () => {
+    vm.launch();
+    vm.newMatch();
+    vm.advance(16);
+    vm.advance(16);
 
-    breakout.launch();
-    breakout.newMatch();
-    breakout.advance(16);
-    breakout.advance(16);
-
-    expect(breakout.situation()).toBe("serve");
+    expect(vm.situation()).toBe("serve");
   });
 
-  test("plays an event in one frame only", async () => {
-    const breakout = await freshBreakout();
+  test("plays an event in one frame only", () => {
+    vm.newMatch();
+    vm.advance(16);
+    vm.launch();
+    vm.advance(16);
 
-    breakout.newMatch();
-    breakout.advance(16);
-    breakout.launch();
-    breakout.advance(16);
-
-    expect(breakout.situation()).toBe("flight");
+    expect(vm.situation()).toBe("flight");
   });
 
   test("puts an event raised by a subscriber into the next frame", async () => {
-    const breakout = await freshBreakout();
-
-    breakout.situation.subscribe((current) => {
+    vm.situation.subscribe((current) => {
       if (current === "flight") {
-        breakout.pause();
+        vm.pause();
       }
     });
-    launchServe(breakout);
+    launchServe();
     await sleep(0);
 
-    expect(breakout.situation()).toBe("flight");
+    expect(vm.situation()).toBe("flight");
 
-    breakout.advance(16);
+    vm.advance(16);
 
-    expect(breakout.situation()).toBe("paused-flight");
+    expect(vm.situation()).toBe("paused-flight");
   });
 });
 
 describe("the picture diff", () => {
   test("a frame that changes nothing wakes no subscriber", async () => {
-    const breakout = await freshBreakout();
     const woken = [
-      watch(breakout.ball),
-      watch(breakout.paddle),
-      watch(breakout.score),
-      watch(breakout.lives),
-      watch(breakout.situation),
+      watch(vm.ball),
+      watch(vm.paddle),
+      watch(vm.score),
+      watch(vm.lives),
+      watch(vm.situation),
     ];
 
-    breakout.advance(16);
+    vm.advance(16);
     await sleep(0);
 
     expect(woken.map((spy) => spy.mock.calls.length)).toEqual([0, 0, 0, 0, 0]);
   });
 
-  test("writes the moved paddle and ball before advance returns", async () => {
-    const breakout = await freshBreakout();
+  test("writes the moved paddle and ball before advance returns", () => {
     const opening = openingMatch();
 
-    breakout.paddleSteering.setRight();
-    breakout.advance(16);
+    vm.paddleSteering.setRight();
+    vm.advance(16);
 
-    expect(breakout.paddle()).toBeGreaterThan(opening.paddle);
-    expect(breakout.ball()).toEqual({ x: breakout.paddle(), y: opening.ball.y });
+    expect(vm.paddle()).toBeGreaterThan(opening.paddle);
+    expect(vm.ball()).toEqual({ x: vm.paddle(), y: opening.ball.y });
   });
 
   test("wakes the moved pieces once, on a microtask after advance", async () => {
-    const breakout = await freshBreakout();
-    const moved = [watch(breakout.ball), watch(breakout.paddle)];
-    const still = [watch(breakout.score), watch(breakout.lives), watch(breakout.situation)];
-    const bricks = wokenBricks(breakout);
+    const moved = [watch(vm.ball), watch(vm.paddle)];
+    const still = [watch(vm.score), watch(vm.lives), watch(vm.situation)];
+    const bricks = wokenBricks();
 
-    breakout.paddleSteering.setRight();
-    breakout.advance(16);
+    vm.paddleSteering.setRight();
+    vm.advance(16);
 
     expect(moved.map((spy) => spy.mock.calls.length)).toEqual([0, 0]);
 
@@ -210,14 +200,12 @@ describe("the picture diff", () => {
   });
 
   test("a flight frame that only moves the ball leaves the bricks asleep", async () => {
-    const breakout = await freshBreakout();
+    launchServe();
 
-    launchServe(breakout);
+    const flown = watch(vm.ball);
+    const bricks = wokenBricks();
 
-    const flown = watch(breakout.ball);
-    const bricks = wokenBricks(breakout);
-
-    breakout.advance(16);
+    vm.advance(16);
     await sleep(0);
 
     expect(flown).toHaveBeenCalledOnce();
@@ -225,107 +213,90 @@ describe("the picture diff", () => {
   });
 
   test("a destroyed brick wakes only its own cell", async () => {
-    const breakout = await freshBreakout();
+    launchServe();
 
-    launchServe(breakout);
+    const bricks = wokenBricks();
 
-    const bricks = wokenBricks(breakout);
-
-    playUntilScore(breakout);
+    playUntilScore();
     await sleep(0);
 
     const fallen = everyCell.filter(
-      ([column, row]) => openingMatch().bricks[column][row] && !breakout.brickAt(column, row)(),
+      ([column, row]) => openingMatch().bricks[column][row] && !vm.brickAt(column, row)(),
     );
 
-    expect(breakout.score()).toBeGreaterThan(0);
+    expect(vm.score()).toBeGreaterThan(0);
     expect(fallen.length).toBeGreaterThan(0);
     expect(bricks()).toEqual(fallen);
   });
 
   test("keeps the held paddle direction across ticks", async () => {
-    const breakout = await freshBreakout();
+    vm.paddleSteering.setLeft();
 
-    breakout.paddleSteering.setLeft();
+    const direction = watch(vm.paddleDirection);
 
-    const direction = watch(breakout.paddleDirection);
-
-    breakout.advance(16);
-    breakout.advance(16);
+    vm.advance(16);
+    vm.advance(16);
     await sleep(0);
 
     expect(direction).not.toHaveBeenCalled();
-    expect(breakout.paddleDirection()).toBe("left");
+    expect(vm.paddleDirection()).toBe("left");
   });
 });
 
 describe("the paddle direction", () => {
-  test("starts with no direction", async () => {
-    const breakout = await freshBreakout();
-
-    expect(breakout.paddleDirection()).toBe("none");
+  test("starts with no direction", () => {
+    expect(vm.paddleDirection()).toBe("none");
   });
 
-  test("moves the paddle while held and stops it once released", async () => {
-    const breakout = await freshBreakout();
+  test("moves the paddle while held and stops it once released", () => {
     const opening = openingMatch();
 
-    breakout.paddleSteering.setRight();
-    breakout.advance(16);
+    vm.paddleSteering.setRight();
+    vm.advance(16);
 
-    const held = breakout.paddle();
+    const held = vm.paddle();
 
-    breakout.paddleSteering.setNone();
-    breakout.advance(16);
+    vm.paddleSteering.setNone();
+    vm.advance(16);
 
     expect(held).toBeGreaterThan(opening.paddle);
-    expect(breakout.paddle()).toBe(held);
+    expect(vm.paddle()).toBe(held);
   });
 });
 
 describe("a new match", () => {
   test("writes the opening layout into the same brick atoms", async () => {
-    const breakout = await freshBreakout();
-    const before = everyCell.map(([column, row]) => breakout.brickAt(column, row));
+    const before = everyCell.map(([column, row]) => vm.brickAt(column, row));
 
-    launchServe(breakout);
-    playUntilScore(breakout);
+    launchServe();
+    playUntilScore();
 
-    expect(breakout.score()).toBeGreaterThan(0);
+    expect(vm.score()).toBeGreaterThan(0);
 
     const fallen = everyCell.filter(
-      ([column, row]) => openingMatch().bricks[column][row] && !breakout.brickAt(column, row)(),
+      ([column, row]) => openingMatch().bricks[column][row] && !vm.brickAt(column, row)(),
     );
-    const bricks = wokenBricks(breakout);
+    const bricks = wokenBricks();
 
-    breakout.newMatch();
-    breakout.advance(16);
+    vm.newMatch();
+    vm.advance(16);
     await sleep(0);
 
-    const after = everyCell.map(([column, row]) => breakout.brickAt(column, row));
+    const after = everyCell.map(([column, row]) => vm.brickAt(column, row));
 
     expect(after.every((brick, index) => brick === before[index])).toBe(true);
     expect(bricks()).toEqual(fallen);
-    expect(brickPicture(breakout)).toEqual(openingMatch().bricks);
-    expect(breakout.score()).toBe(0);
-    expect(breakout.situation()).toBe("serve");
+    expect(brickPicture()).toEqual(openingMatch().bricks);
+    expect(vm.score()).toBe(0);
+    expect(vm.situation()).toBe("serve");
   });
 });
 
 describe("the tick", () => {
-  async function paddleAfter(elapsedMs: number): Promise<number> {
-    const breakout = await freshBreakout();
-
-    breakout.paddleSteering.setLeft();
-    breakout.advance(elapsedMs);
-
-    return breakout.paddle();
-  }
-
-  test("never plays more than 100 ms in one frame", async () => {
-    const capped = await paddleAfter(100);
-    const stalled = await paddleAfter(60_000);
-    const shorter = await paddleAfter(99);
+  test("never plays more than 100 ms in one frame", () => {
+    const capped = paddleAfter(100);
+    const stalled = paddleAfter(60_000);
+    const shorter = paddleAfter(99);
 
     expect(stalled).toBe(capped);
     expect(shorter).toBeGreaterThan(capped);

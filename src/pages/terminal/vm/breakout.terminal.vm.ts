@@ -1,15 +1,4 @@
-import {
-  type PaddleDirection,
-  type Situation,
-  launch,
-  newMatch,
-  paddleDirection,
-  pause,
-  resume,
-  situation,
-} from "@/modules/breakout";
-
-type HeldDirection = Exclude<PaddleDirection, "none">;
+import { type MatchKey, matchControls } from "@/modules/breakout";
 
 export interface PressedKey {
   readonly name: string;
@@ -25,61 +14,42 @@ export interface BreakoutTerminalInput {
 const firstRepeatDelayMs = 600;
 const repeatGapMs = 100;
 
-const situationLabels: Record<Situation, string> = {
-  serve: "Serve: Space to launch",
-  flight: "",
-  "paused-serve": "Paused: R to resume",
-  "paused-flight": "Paused: R to resume",
-  won: "You won! N for a new match",
-  lost: "You lost. N for a new match",
-};
-
-const directionKeys = new Map<string, HeldDirection>([
+const matchKeys = new Map<string, MatchKey>([
   ["left", "left"],
-  ["a", "left"],
+  ["a", "a"],
   ["right", "right"],
-  ["d", "right"],
+  ["d", "d"],
+  ["space", "space"],
+  ["p", "p"],
+  ["r", "r"],
+  ["n", "n"],
 ]);
-
-const eventKeys = new Map<string, () => void>([
-  ["space", launch],
-  ["p", pause],
-  ["r", resume],
-  ["n", newMatch],
-]);
-
-export function situationLabel(): string {
-  return situationLabels[situation()];
-}
 
 export function breakoutTerminalInput(now: () => number): BreakoutTerminalInput {
-  const heldKeys = new Map<string, number>();
+  const controls = matchControls();
+  const releaseDeadlines = new Map<MatchKey, number>();
   let reportsRelease = false;
-
-  function holdLatestDirection(): void {
-    const latest = [...heldKeys.keys()].at(-1);
-
-    paddleDirection.set(latest === undefined ? "none" : (directionKeys.get(latest) ?? "none"));
-  }
 
   return {
     press({ name, repeat }) {
-      const fire = repeat ? undefined : eventKeys.get(name);
+      const key = matchKeys.get(name);
 
-      if (directionKeys.has(name)) {
-        const waitMs = heldKeys.has(name) ? repeatGapMs : firstRepeatDelayMs;
-
-        heldKeys.delete(name);
-        heldKeys.set(name, now() + waitMs);
-        holdLatestDirection();
-      } else if (fire) {
-        fire();
+      if (key === undefined) {
+        return;
       }
+
+      const waitMs = releaseDeadlines.has(key) ? repeatGapMs : firstRepeatDelayMs;
+
+      releaseDeadlines.set(key, now() + waitMs);
+      controls.press(key, repeat);
     },
     release(name) {
+      const key = matchKeys.get(name);
+
       reportsRelease = true;
-      if (heldKeys.delete(name)) {
-        holdLatestDirection();
+      if (key !== undefined) {
+        releaseDeadlines.delete(key);
+        controls.release(key);
       }
     },
     letGoSilentKeys() {
@@ -88,15 +58,13 @@ export function breakoutTerminalInput(now: () => number): BreakoutTerminalInput 
       }
 
       const nowMs = now();
-      const silent = [...heldKeys].filter(([, releaseAtMs]) => releaseAtMs <= nowMs);
 
-      if (silent.length === 0) {
-        return;
+      for (const [key, releaseAtMs] of releaseDeadlines) {
+        if (releaseAtMs <= nowMs) {
+          releaseDeadlines.delete(key);
+          controls.release(key);
+        }
       }
-      for (const [name] of silent) {
-        heldKeys.delete(name);
-      }
-      holdLatestDirection();
     },
   };
 }

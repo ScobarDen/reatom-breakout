@@ -10,7 +10,6 @@ interface Fixture {
   readonly breakout: Breakout;
   readonly input: TerminalInput.BreakoutTerminalInput;
   readonly clock: { nowMs: number };
-  readonly situationLabel: () => string;
 }
 
 async function freshInput(): Promise<Fixture> {
@@ -18,28 +17,72 @@ async function freshInput(): Promise<Fixture> {
   vi.resetModules();
 
   const breakout = await import("@/modules/breakout");
-  const { breakoutTerminalInput, situationLabel } = await import("./breakout.terminal.vm.ts");
+  const { breakoutTerminalInput } = await import("./breakout.terminal.vm.ts");
   const clock = { nowMs: 0 };
 
-  return { breakout, input: breakoutTerminalInput(() => clock.nowMs), clock, situationLabel };
+  return { breakout, input: breakoutTerminalInput(() => clock.nowMs), clock };
 }
 
-describe("direction keys", () => {
-  test("follow the latest held key and fall back to the one still held", async () => {
+describe("the terminal layout", () => {
+  test.each([
+    ["left", "left"],
+    ["a", "left"],
+    ["right", "right"],
+    ["d", "right"],
+  ])("%s steers the paddle %s", async (name, direction) => {
     const { breakout, input } = await freshInput();
 
-    input.press({ name: "a", repeat: false });
-    input.press({ name: "right", repeat: false });
+    input.press({ name, repeat: false });
 
-    expect(breakout.paddleDirection()).toBe("right");
+    expect(breakout.paddleDirection()).toBe(direction);
 
-    input.release("right");
-
-    expect(breakout.paddleDirection()).toBe("left");
-
-    input.release("a");
+    input.release(name);
 
     expect(breakout.paddleDirection()).toBe("none");
+  });
+
+  test("space launches the serve", async () => {
+    const { breakout, input } = await freshInput();
+
+    input.press({ name: "space", repeat: false });
+    breakout.advance(16);
+
+    expect(breakout.situation()).toBe("flight");
+  });
+
+  test("p pauses and r resumes", async () => {
+    const { breakout, input } = await freshInput();
+
+    input.press({ name: "p", repeat: false });
+    breakout.advance(16);
+
+    expect(breakout.situation()).toBe("paused-serve");
+
+    input.press({ name: "r", repeat: false });
+    breakout.advance(16);
+
+    expect(breakout.situation()).toBe("serve");
+  });
+
+  test("n starts a new match", async () => {
+    const { breakout, input } = await freshInput();
+
+    input.press({ name: "space", repeat: false });
+    breakout.advance(16);
+    input.press({ name: "n", repeat: false });
+    breakout.advance(16);
+
+    expect(breakout.situation()).toBe("serve");
+  });
+
+  test("an unbound key leaves the paddle alone", async () => {
+    const { breakout, input } = await freshInput();
+
+    input.press({ name: "left", repeat: false });
+    input.press({ name: "q", repeat: false });
+    input.release("q");
+
+    expect(breakout.paddleDirection()).toBe("left");
   });
 });
 
@@ -102,72 +145,5 @@ describe("a terminal that reports releases", () => {
     input.letGoSilentKeys();
 
     expect(breakout.paddleDirection()).toBe("left");
-  });
-});
-
-describe("event keys", () => {
-  test("space launches the serve", async () => {
-    const { breakout, input } = await freshInput();
-
-    input.press({ name: "space", repeat: false });
-    breakout.advance(16);
-
-    expect(breakout.situation()).toBe("flight");
-  });
-
-  test("p pauses and r resumes", async () => {
-    const { breakout, input } = await freshInput();
-
-    input.press({ name: "p", repeat: false });
-    breakout.advance(16);
-
-    expect(breakout.situation()).toBe("paused-serve");
-
-    input.press({ name: "r", repeat: false });
-    breakout.advance(16);
-
-    expect(breakout.situation()).toBe("serve");
-  });
-
-  test("n starts a new match", async () => {
-    const { breakout, input } = await freshInput();
-
-    input.press({ name: "space", repeat: false });
-    breakout.advance(16);
-    input.press({ name: "n", repeat: false });
-    breakout.advance(16);
-
-    expect(breakout.situation()).toBe("serve");
-  });
-
-  test("do nothing on a key repeat", async () => {
-    const { breakout, input } = await freshInput();
-
-    input.press({ name: "space", repeat: true });
-    breakout.advance(16);
-
-    expect(breakout.situation()).toBe("serve");
-  });
-});
-
-describe("the situation label", () => {
-  test("prompts the launch on a serve and the resume on a pause", async () => {
-    const { breakout, input, situationLabel } = await freshInput();
-
-    expect(situationLabel()).toBe("Serve: Space to launch");
-
-    input.press({ name: "p", repeat: false });
-    breakout.advance(16);
-
-    expect(situationLabel()).toBe("Paused: R to resume");
-  });
-
-  test("stays empty while the ball flies", async () => {
-    const { breakout, input, situationLabel } = await freshInput();
-
-    input.press({ name: "space", repeat: false });
-    breakout.advance(16);
-
-    expect(situationLabel()).toBe("");
   });
 });

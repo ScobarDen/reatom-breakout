@@ -1,15 +1,4 @@
-import {
-  type PaddleDirection,
-  type Situation,
-  launch,
-  newMatch,
-  paddleDirection,
-  pause,
-  resume,
-  situation,
-} from "@/modules/breakout";
-
-type HeldDirection = Exclude<PaddleDirection, "none">;
+import { type MatchKey, matchControls } from "@/modules/breakout";
 
 export interface PressedKey {
   readonly code: string;
@@ -24,69 +13,39 @@ export interface BreakoutWebInput {
   letGo: () => void;
 }
 
-const situationLabels: Record<Situation, string> = {
-  serve: "Serve: Space to launch",
-  flight: "",
-  "paused-serve": "Paused: R to resume",
-  "paused-flight": "Paused: R to resume",
-  won: "You won! N for a new match",
-  lost: "You lost. N for a new match",
-};
-
-const directionKeys: Partial<Record<string, HeldDirection>> = {
+const matchKeys: Partial<Record<string, MatchKey>> = {
   ArrowLeft: "left",
-  KeyA: "left",
+  KeyA: "a",
   ArrowRight: "right",
-  KeyD: "right",
+  KeyD: "d",
+  Space: "space",
+  KeyP: "p",
+  KeyR: "r",
+  KeyN: "n",
 };
-
-const eventKeys: Partial<Record<string, () => void>> = {
-  Space: launch,
-  KeyP: pause,
-  KeyR: resume,
-  KeyN: newMatch,
-};
-
-export function situationLabel(): string {
-  return situationLabels[situation()];
-}
 
 export function breakoutWebInput(): BreakoutWebInput {
-  const heldKeys = new Set<string>();
-
-  function holdLatestDirection(): void {
-    const latest = [...heldKeys].at(-1);
-
-    paddleDirection.set(latest === undefined ? "none" : (directionKeys[latest] ?? "none"));
-  }
+  const controls = matchControls();
 
   return {
     press({ code, repeat }) {
-      const fire = repeat ? undefined : eventKeys[code];
+      const key = matchKeys[code];
 
-      if (directionKeys[code]) {
-        heldKeys.delete(code);
-        heldKeys.add(code);
-        holdLatestDirection();
-
-        return "claimed";
-      }
-      if (fire) {
-        fire();
-
-        return "claimed";
+      if (key === undefined) {
+        return "ignored";
       }
 
-      return "ignored";
+      return controls.press(key, repeat) ? "claimed" : "ignored";
     },
     release(code) {
-      if (heldKeys.delete(code)) {
-        holdLatestDirection();
+      const key = matchKeys[code];
+
+      if (key !== undefined) {
+        controls.release(key);
       }
     },
     letGo() {
-      heldKeys.clear();
-      holdLatestDirection();
+      controls.releaseAll();
     },
   };
 }

@@ -13,6 +13,7 @@ import {
   boardWidth,
   brickAt,
   columns,
+  controlsHint,
   lives,
   paddle,
   paddleHeight,
@@ -20,9 +21,10 @@ import {
   paddleY,
   rows,
   score,
+  situationLabel,
 } from "@/modules/breakout";
 
-import { breakoutTerminalInput, situationLabel } from "./vm/breakout.terminal.vm.ts";
+import { breakoutTerminalInput } from "./vm/breakout.terminal.vm.ts";
 
 export interface BreakoutScreen {
   paint: () => void;
@@ -90,7 +92,7 @@ export function mountBreakoutScreen(renderer: CliRenderer): BreakoutScreen {
   const board = new FrameBufferRenderable(renderer, { width: boardColumns, height: boardRows });
   const situationLine = new TextRenderable(renderer, { content: "" });
   const hint = new TextRenderable(renderer, {
-    content: "← → or A D move · Space launch · P pause · R resume · N new match",
+    content: controlsHint,
     fg: "#777777",
   });
   const layout = new BoxRenderable(renderer, {

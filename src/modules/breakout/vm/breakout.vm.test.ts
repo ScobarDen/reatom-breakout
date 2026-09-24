@@ -62,8 +62,10 @@ describe("the public surface", () => {
       "boardWidth",
       "brickAt",
       "columns",
+      "controlsHint",
       "launch",
       "lives",
+      "matchControls",
       "newMatch",
       "paddle",
       "paddleDirection",
@@ -75,6 +77,7 @@ describe("the public surface", () => {
       "rows",
       "score",
       "situation",
+      "situationLabel",
     ]);
   });
 });

@@ -9,7 +9,6 @@ type Breakout = typeof BreakoutModule;
 interface Fixture {
   readonly breakout: Breakout;
   readonly input: WebInput.BreakoutWebInput;
-  readonly situationLabel: () => string;
 }
 
 async function freshInput(): Promise<Fixture> {
@@ -17,53 +16,29 @@ async function freshInput(): Promise<Fixture> {
   vi.resetModules();
 
   const breakout = await import("@/modules/breakout");
-  const { breakoutWebInput, situationLabel } = await import("./breakout.web.vm.ts");
+  const { breakoutWebInput } = await import("./breakout.web.vm.ts");
 
-  return { breakout, input: breakoutWebInput(), situationLabel };
+  return { breakout, input: breakoutWebInput() };
 }
 
-describe("direction keys", () => {
-  test("hold the paddle direction while pressed", async () => {
+describe("the web layout", () => {
+  test.each([
+    ["ArrowLeft", "left"],
+    ["KeyA", "left"],
+    ["ArrowRight", "right"],
+    ["KeyD", "right"],
+  ])("%s steers the paddle %s", async (code, direction) => {
     const { breakout, input } = await freshInput();
 
-    input.press({ code: "ArrowLeft", repeat: false });
+    input.press({ code, repeat: false });
 
-    expect(breakout.paddleDirection()).toBe("left");
-  });
+    expect(breakout.paddleDirection()).toBe(direction);
 
-  test("follow the latest held key and fall back to the one still held", async () => {
-    const { breakout, input } = await freshInput();
-
-    input.press({ code: "KeyA", repeat: false });
-    input.press({ code: "ArrowRight", repeat: false });
-
-    expect(breakout.paddleDirection()).toBe("right");
-
-    input.release("ArrowRight");
-
-    expect(breakout.paddleDirection()).toBe("left");
-
-    input.release("KeyA");
+    input.release(code);
 
     expect(breakout.paddleDirection()).toBe("none");
   });
 
-  test("are all let go when the screen loses focus", async () => {
-    const { breakout, input } = await freshInput();
-
-    input.press({ code: "ArrowLeft", repeat: false });
-    input.press({ code: "KeyD", repeat: false });
-    input.letGo();
-
-    expect(breakout.paddleDirection()).toBe("none");
-
-    input.release("KeyD");
-
-    expect(breakout.paddleDirection()).toBe("none");
-  });
-});
-
-describe("event keys", () => {
   test("Space launches the serve", async () => {
     const { breakout, input } = await freshInput();
 
@@ -73,7 +48,7 @@ describe("event keys", () => {
     expect(breakout.situation()).toBe("flight");
   });
 
-  test("P pauses and R resumes", async () => {
+  test("KeyP pauses and KeyR resumes", async () => {
     const { breakout, input } = await freshInput();
 
     input.press({ code: "KeyP", repeat: false });
@@ -87,7 +62,7 @@ describe("event keys", () => {
     expect(breakout.situation()).toBe("serve");
   });
 
-  test("N starts a new match", async () => {
+  test("KeyN starts a new match", async () => {
     const { breakout, input } = await freshInput();
 
     input.press({ code: "Space", repeat: false });
@@ -109,35 +84,16 @@ describe("event keys", () => {
 
     expect(input.press({ code, repeat })).toBe(outcome);
   });
-
-  test("do nothing on a key repeat", async () => {
-    const { breakout, input } = await freshInput();
-
-    input.press({ code: "Space", repeat: true });
-    breakout.advance(16);
-
-    expect(breakout.situation()).toBe("serve");
-  });
 });
 
-describe("the situation label", () => {
-  test("prompts the launch on a serve and the resume on a pause", async () => {
-    const { breakout, input, situationLabel } = await freshInput();
+describe("losing focus", () => {
+  test("lets every held key go", async () => {
+    const { breakout, input } = await freshInput();
 
-    expect(situationLabel()).toBe("Serve: Space to launch");
+    input.press({ code: "ArrowLeft", repeat: false });
+    input.press({ code: "KeyD", repeat: false });
+    input.letGo();
 
-    input.press({ code: "KeyP", repeat: false });
-    breakout.advance(16);
-
-    expect(situationLabel()).toBe("Paused: R to resume");
-  });
-
-  test("stays empty while the ball flies", async () => {
-    const { breakout, input, situationLabel } = await freshInput();
-
-    input.press({ code: "Space", repeat: false });
-    breakout.advance(16);
-
-    expect(situationLabel()).toBe("");
+    expect(breakout.paddleDirection()).toBe("none");
   });
 });

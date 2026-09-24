@@ -5,6 +5,7 @@ import {
   boardWidth,
   brickAt,
   columns,
+  controlsHint,
   lives,
   paddle,
   paddleHeight,
@@ -12,9 +13,10 @@ import {
   paddleY,
   rows,
   score,
+  situationLabel,
 } from "@/modules/breakout";
 
-import { breakoutWebInput, situationLabel } from "./vm/breakout.web.vm.ts";
+import { breakoutWebInput } from "./vm/breakout.web.vm.ts";
 
 const scale = 2;
 const brickWidth = boardWidth / columns;
@@ -98,9 +100,7 @@ export function BreakoutScreen() {
       </div>
       <Board />
       <div>{() => situationLabel()}</div>
-      <div style={{ color: "#777" }}>
-        ← → or A D move · Space launch · P pause · R resume · N new match
-      </div>
+      <div style={{ color: "#777" }}>{controlsHint}</div>
     </main>
   );
 }

@@ -1,12 +1,13 @@
-import { type Computed, effect, reatomEnum } from "@reatom/core";
+import { type Computed, computed, effect, reatomRoute, urlAtom } from "@reatom/core";
 
 import { pauseMatch } from "@/modules/breakout";
 
-import { type Screen, screens } from "../model/screen.model.ts";
+import { type Screen, isScreen } from "../model/screen.model.ts";
 
-export interface ScreenPort {
+export interface ScreenNavigation {
   readonly screen: Computed<Screen>;
   readonly open: (next: Screen) => void;
+  readonly href: (screen: Screen) => string;
 }
 
 export const screenLabels: Record<Screen, string> = {
@@ -15,22 +16,30 @@ export const screenLabels: Record<Screen, string> = {
   results: "Results",
 };
 
-export function reatomScreen(): ScreenPort {
-  const screen = reatomEnum(screens, "screen");
+type ScreenSearch = Partial<Record<"screen", string>>;
 
-  return {
-    screen,
-    open(next) {
-      screen.set(next);
-    },
-  };
+function searchOf(screen: Screen): ScreenSearch {
+  return screen === "match" ? {} : { screen };
 }
 
-export function screenNavigation(port: ScreenPort): ScreenPort {
+const screenRoute = reatomRoute(
+  {
+    search: {
+      decode: ({ screen }: ScreenSearch): { screen: Screen } => ({
+        screen: isScreen(screen) ? screen : "match",
+      }),
+      encode: ({ screen }: { screen: Screen }): ScreenSearch => searchOf(screen),
+    },
+  },
+  "screenRoute",
+);
+
+export function screenNavigation(): ScreenNavigation {
+  const screen = computed(() => screenRoute()?.screen ?? "match", "screen");
   let shown: Screen = "match";
 
   effect(() => {
-    const next = port.screen();
+    const next = screen();
 
     if (shown === "match" && next !== "match") {
       pauseMatch();
@@ -38,5 +47,16 @@ export function screenNavigation(port: ScreenPort): ScreenPort {
     shown = next;
   }, "pauseOnLeavingMatch");
 
-  return port;
+  return {
+    screen,
+    open(next) {
+      screenRoute.go({ screen: next });
+    },
+    href(target) {
+      const search = new URLSearchParams(searchOf(target)).toString();
+      const { pathname } = urlAtom();
+
+      return search === "" ? pathname : `${pathname}?${search}`;
+    },
+  };
 }

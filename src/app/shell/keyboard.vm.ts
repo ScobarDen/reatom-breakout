@@ -1,7 +1,6 @@
-import type { Unsubscribe } from "@reatom/core";
+import { type Unsubscribe, computed } from "@reatom/core";
 
 import { type MatchKey, matchControls } from "@/modules/breakout";
-import type { ScreenPort } from "@/modules/screens";
 
 export interface PressedKey {
   readonly code: string;
@@ -10,14 +9,14 @@ export interface PressedKey {
 
 export type KeyOutcome = "claimed" | "ignored";
 
-export interface BreakoutWebInput {
+export interface MatchKeyboard {
   press: (key: PressedKey) => KeyOutcome;
   release: (code: string) => void;
   letGo: () => void;
-  followScreen: (onMatch: () => void) => Unsubscribe;
+  letGoOffMatch: () => Unsubscribe;
 }
 
-const hostKeys: Partial<Record<string, MatchKey>> = {
+const matchKeys: Partial<Record<string, MatchKey>> = {
   ArrowLeft: "left",
   KeyA: "a",
   ArrowRight: "right",
@@ -28,21 +27,21 @@ const hostKeys: Partial<Record<string, MatchKey>> = {
   KeyN: "n",
 };
 
-export function breakoutWebInput(navigation: ScreenPort): BreakoutWebInput {
+export function matchKeyboard(isMatchShown: () => boolean = () => true): MatchKeyboard {
   const controls = matchControls();
 
   return {
     press({ code, repeat }) {
-      const key = hostKeys[code];
+      const key = matchKeys[code];
 
-      if (key === undefined || navigation.screen() !== "match") {
+      if (key === undefined || !isMatchShown()) {
         return "ignored";
       }
 
       return controls.press(key, repeat) ? "claimed" : "ignored";
     },
     release(code) {
-      const key = hostKeys[code];
+      const key = matchKeys[code];
 
       if (key !== undefined) {
         controls.release(key);
@@ -51,11 +50,9 @@ export function breakoutWebInput(navigation: ScreenPort): BreakoutWebInput {
     letGo() {
       controls.releaseAll();
     },
-    followScreen(onMatch) {
-      return navigation.screen.subscribe((screen) => {
-        if (screen === "match") {
-          onMatch();
-        } else {
+    letGoOffMatch() {
+      return computed(() => isMatchShown(), "isMatchShown").subscribe((isShown) => {
+        if (!isShown) {
           controls.releaseAll();
         }
       });

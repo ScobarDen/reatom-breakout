@@ -4,11 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "boundaries": "feod-analyzer analyze --fail-on warning",
-    "terminal": "bun scripts/terminal.ts"
+    "boundaries": "feod-analyzer analyze --fail-on warning"
   },
   "dependencies": {
-    "@opentui/core": "0.5.11",
     "@reatom/core": "1001.3.0",
     "@reatom/jsx": "1001.3.0"
   },

@@ -1,1 +1,1 @@
-export { mountBreakoutScreen } from "./breakout.terminal.view.ts";
+export { mountScreens } from "./screens.terminal.view.ts";

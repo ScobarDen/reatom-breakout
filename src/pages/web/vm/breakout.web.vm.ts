@@ -1,4 +1,7 @@
+import type { Unsubscribe } from "@reatom/core";
+
 import { type MatchKey, matchControls } from "@/modules/breakout";
+import type { ScreenPort } from "@/modules/screens";
 
 export interface PressedKey {
   readonly code: string;
@@ -11,6 +14,7 @@ export interface BreakoutWebInput {
   press: (key: PressedKey) => KeyOutcome;
   release: (code: string) => void;
   letGo: () => void;
+  followScreen: (onMatch: () => void) => Unsubscribe;
 }
 
 const hostKeys: Partial<Record<string, MatchKey>> = {
@@ -24,14 +28,14 @@ const hostKeys: Partial<Record<string, MatchKey>> = {
   KeyN: "n",
 };
 
-export function breakoutWebInput(): BreakoutWebInput {
+export function breakoutWebInput(navigation: ScreenPort): BreakoutWebInput {
   const controls = matchControls();
 
   return {
     press({ code, repeat }) {
       const key = hostKeys[code];
 
-      if (key === undefined) {
+      if (key === undefined || navigation.screen() !== "match") {
         return "ignored";
       }
 
@@ -46,6 +50,15 @@ export function breakoutWebInput(): BreakoutWebInput {
     },
     letGo() {
       controls.releaseAll();
+    },
+    followScreen(onMatch) {
+      return navigation.screen.subscribe((screen) => {
+        if (screen === "match") {
+          onMatch();
+        } else {
+          controls.releaseAll();
+        }
+      });
     },
   };
 }

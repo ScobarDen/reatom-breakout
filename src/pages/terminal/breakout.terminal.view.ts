@@ -2,7 +2,6 @@ import {
   BoxRenderable,
   type CliRenderer,
   FrameBufferRenderable,
-  type KeyEvent,
   RGBA,
   TextRenderable,
 } from "@opentui/core";
@@ -19,12 +18,9 @@ import {
   situationLabel,
 } from "@/modules/breakout";
 
-import { breakoutTerminalInput } from "./vm/breakout.terminal.vm.ts";
-
-export interface BreakoutScreen {
-  paint: () => void;
-  press: (key: KeyEvent) => void;
-  release: (key: KeyEvent) => void;
+export interface MatchView {
+  readonly layout: BoxRenderable;
+  readonly paint: () => void;
 }
 
 const cellWidth = 5;
@@ -82,8 +78,7 @@ function paintBoard(frame: FrameBufferRenderable): void {
   frame.requestRender();
 }
 
-export function mountBreakoutScreen(renderer: CliRenderer): BreakoutScreen {
-  const input = breakoutTerminalInput(() => performance.now());
+export function matchView(renderer: CliRenderer): MatchView {
   const scoreLine = new TextRenderable(renderer, { content: "" });
   const boardFrame = new FrameBufferRenderable(renderer, {
     width: boardColumns,
@@ -91,15 +86,12 @@ export function mountBreakoutScreen(renderer: CliRenderer): BreakoutScreen {
   });
   const situationLine = new TextRenderable(renderer, { content: "" });
   const hint = new TextRenderable(renderer, {
-    content: controlsHint,
+    content: `${controlsHint} · Tab screens`,
     fg: "#777777",
   });
   const layout = new BoxRenderable(renderer, {
     flexDirection: "column",
     alignItems: "center",
-    justifyContent: "center",
-    width: "100%",
-    height: "100%",
     gap: 1,
   });
 
@@ -107,20 +99,13 @@ export function mountBreakoutScreen(renderer: CliRenderer): BreakoutScreen {
   layout.add(boardFrame);
   layout.add(situationLine);
   layout.add(hint);
-  renderer.root.add(layout);
 
   return {
+    layout,
     paint() {
-      input.letGoSilentKeys();
       scoreLine.content = `Score ${score()}    Lives ${lives()}`;
       situationLine.content = situationLabel();
       paintBoard(boardFrame);
-    },
-    press(key) {
-      input.press({ name: key.name, repeat: key.eventType === "repeat" || key.repeated === true });
-    },
-    release(key) {
-      input.release(key.name);
     },
   };
 }

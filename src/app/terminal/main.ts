@@ -2,7 +2,8 @@ import "../logger.ts";
 import { type KeyEvent, createCliRenderer } from "@opentui/core";
 
 import { advance } from "@/modules/breakout";
-import { mountBreakoutScreen } from "@/pages/terminal";
+import { reatomScreen, screenNavigation } from "@/modules/screens";
+import { mountScreens } from "@/pages/terminal";
 
 const isDevelopment = import.meta.env.MODE === "development";
 
@@ -11,7 +12,7 @@ const renderer = await createCliRenderer({
   targetFps: 60,
   useKittyKeyboard: { events: true },
 });
-const screen = mountBreakoutScreen(renderer);
+const screen = mountScreens(renderer, screenNavigation(reatomScreen()));
 let isConsoleFocused = false;
 
 function routeKeyToConsoleOrScreen(key: KeyEvent): void {

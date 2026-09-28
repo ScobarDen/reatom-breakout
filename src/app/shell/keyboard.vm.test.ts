@@ -69,6 +69,25 @@ describe("the keyboard layout", () => {
   ])("%s: %s repeat=%s is %s", (_name, code, repeat, outcome) => {
     expect(matchKeyboard().press({ code, repeat })).toBe(outcome);
   });
+
+  test.each(["ctrlKey", "altKey", "metaKey"])(
+    "%s leaves the shortcut to the browser",
+    (modifier) => {
+      const keyboard = matchKeyboard();
+
+      expect(keyboard.press({ code: "KeyR", repeat: false, [modifier]: true })).toBe("ignored");
+      expect(keyboard.press({ code: "ArrowLeft", repeat: false, [modifier]: true })).toBe(
+        "ignored",
+      );
+      expect(breakout.paddleDirection()).toBe("none");
+    },
+  );
+
+  test("Shift keeps steering", () => {
+    matchKeyboard().press({ code: "ArrowLeft", repeat: false, shiftKey: true });
+
+    expect(breakout.paddleDirection()).toBe("left");
+  });
 });
 
 describe("losing focus", () => {

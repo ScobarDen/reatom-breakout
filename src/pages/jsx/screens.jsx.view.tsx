@@ -22,7 +22,7 @@ function ScreenStub({ screen }: { screen: Screen }) {
   return <p>{`${screenLabels[screen]} — coming soon`}</p>;
 }
 
-export function ScreensShell({ navigation }: { navigation: ScreenNavigation }) {
+export function ScreensLayout({ navigation }: { navigation: ScreenNavigation }) {
   function hiddenUnless(screen: Screen): () => boolean {
     return () => navigation.screen() !== screen;
   }

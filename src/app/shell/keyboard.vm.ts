@@ -5,6 +5,14 @@ import { type MatchKey, matchControls } from "@/modules/breakout";
 export interface PressedKey {
   readonly code: string;
   readonly repeat: boolean;
+  readonly ctrlKey?: boolean;
+  readonly altKey?: boolean;
+  readonly metaKey?: boolean;
+  readonly shiftKey?: boolean;
+}
+
+function isShortcut({ ctrlKey, altKey, metaKey }: PressedKey): boolean {
+  return ctrlKey === true || altKey === true || metaKey === true;
 }
 
 export type KeyOutcome = "claimed" | "ignored";
@@ -31,14 +39,14 @@ export function matchKeyboard(isMatchShown: () => boolean = () => true): MatchKe
   const controls = matchControls();
 
   return {
-    press({ code, repeat }) {
-      const key = matchKeys[code];
+    press(pressed) {
+      const key = matchKeys[pressed.code];
 
-      if (key === undefined || !isMatchShown()) {
+      if (key === undefined || isShortcut(pressed) || !isMatchShown()) {
         return "ignored";
       }
 
-      return controls.press(key, repeat) ? "claimed" : "ignored";
+      return controls.press(key, pressed.repeat) ? "claimed" : "ignored";
     },
     release(code) {
       const key = matchKeys[code];

@@ -41,7 +41,7 @@ const roles: readonly Role[] = [
 ];
 
 const bareImport: ImportPattern = { regex: "^(@|[A-Za-z])" };
-const everyBuild: readonly ImportPattern[] = [
+const buildSpecific: readonly ImportPattern[] = [
   { group: ["@reatom/jsx"] },
   { regex: "(^|/)pages(/|$)" },
   { regex: "modules/screens" },
@@ -50,7 +50,7 @@ const tickImport: ImportPattern = { importNames: ["advance"], regex: "modules/br
 
 const areas: readonly Area[] = [
   { dir: "src/modules/breakout", roles: ["config", "model", "model-test"], patterns: [bareImport] },
-  { dir: "src/app/shell", patterns: everyBuild },
+  { dir: "src/app/shell", patterns: buildSpecific },
   { dir: "src/pages", patterns: [tickImport] },
 ];
 

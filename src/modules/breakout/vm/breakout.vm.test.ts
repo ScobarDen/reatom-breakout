@@ -56,7 +56,7 @@ beforeEach(() => {
 });
 
 describe("the public surface", () => {
-  test("exposes the picture, the input, the tick and the rules, and no match", async () => {
+  test("exposes the picture, the input, the pause, the tick and the rules, and no match", async () => {
     const breakout = await import("../index.ts");
 
     expect(Object.keys(breakout).toSorted()).toEqual([
@@ -70,6 +70,7 @@ describe("the public surface", () => {
       "matchControls",
       "paddle",
       "paddleDirection",
+      "pauseMatch",
       "ruleBounds",
       "rulesWithinBounds",
       "score",

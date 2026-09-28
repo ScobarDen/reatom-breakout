@@ -9,6 +9,7 @@ import {
   score,
   situationLabel,
 } from "@/modules/breakout";
+import type { ScreenPort } from "@/modules/screens";
 
 import { breakoutWebInput } from "./vm/breakout.web.vm.ts";
 
@@ -51,8 +52,8 @@ function Board() {
   );
 }
 
-export function BreakoutScreen() {
-  const input = breakoutWebInput();
+export function BreakoutScreen({ navigation }: { navigation: ScreenPort }) {
+  const input = breakoutWebInput(navigation);
 
   function press(event: KeyboardEvent): void {
     if (input.press(event) === "claimed") {
@@ -67,14 +68,15 @@ export function BreakoutScreen() {
   return (
     <main
       tabindex={0}
-      ref={(element) => {
-        element.focus();
-      }}
+      ref={(element) =>
+        input.followScreen(() => {
+          element.focus();
+        })
+      }
       on:keydown={press}
       on:keyup={release}
       on:blur={input.letGo}
       style={{
-        "min-height": "100vh",
         display: "grid",
         "place-content": "center",
         gap: "8px",

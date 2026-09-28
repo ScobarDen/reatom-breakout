@@ -8,6 +8,7 @@ export {
   lives,
   paddle,
   paddleDirection,
+  pause as pauseMatch,
   score,
   situation,
 } from "./vm/breakout.vm.ts";

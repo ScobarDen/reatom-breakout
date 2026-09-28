@@ -1,8 +1,10 @@
 import { type MatchKey, matchControls } from "@/modules/breakout";
+import { type ScreenPort, screens } from "@/modules/screens";
 
 export interface PressedKey {
   readonly name: string;
   readonly repeat: boolean;
+  readonly shift?: boolean;
 }
 
 export interface BreakoutTerminalInput {
@@ -25,16 +27,35 @@ const hostKeys = new Map<string, MatchKey>([
   ["n", "n"],
 ]);
 
-export function breakoutTerminalInput(now: () => number): BreakoutTerminalInput {
+export function breakoutTerminalInput(
+  now: () => number,
+  navigation: ScreenPort,
+): BreakoutTerminalInput {
   const controls = matchControls();
   const releaseDeadlines = new Map<MatchKey, number>();
   let reportsRelease = false;
 
+  function turnScreen(steps: number): void {
+    const next = screens.indexOf(navigation.screen()) + steps;
+
+    releaseDeadlines.clear();
+    controls.releaseAll();
+    navigation.open(screens[(next + screens.length) % screens.length]);
+  }
+
   return {
-    press({ name, repeat }) {
+    press({ name, repeat, shift = false }) {
+      if (name === "tab") {
+        if (!repeat) {
+          turnScreen(shift ? -1 : 1);
+        }
+
+        return;
+      }
+
       const key = hostKeys.get(name);
 
-      if (key === undefined) {
+      if (key === undefined || navigation.screen() !== "match") {
         return;
       }
 

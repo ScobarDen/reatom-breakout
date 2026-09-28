@@ -9,7 +9,14 @@ import {
   rows,
 } from "../breakout.config.ts";
 import { type Match, openingMatch } from "./match.model.ts";
-import { type Frame, step } from "./step.model.ts";
+import { type Rules, difficultyRules } from "./rules.model.ts";
+import { type Frame, step as stepWith } from "./step.model.ts";
+
+const { normal } = difficultyRules;
+
+function step(match: Match, played: Frame, rules: Rules = normal): Match {
+  return stepWith(match, played, rules);
+}
 
 const cellWidth = boardWidth / columns;
 const cellHeight = boardHeight / rows;
@@ -37,7 +44,7 @@ function stepFrames(match: Match, frames: number, overrides: Partial<Frame> = {}
 
 describe("openingMatch", () => {
   test("starts a serve with three lives and no score", () => {
-    const match = openingMatch();
+    const match = openingMatch(normal);
 
     expect(match.situation).toBe("serve");
     expect(match.lives).toBe(3);
@@ -45,7 +52,7 @@ describe("openingMatch", () => {
   });
 
   test("lays out a solid rectangle of bricks on the fixed grid", () => {
-    const match = openingMatch();
+    const match = openingMatch(normal);
     const cells = standingCells(match);
     const cellColumns = cells.map(([column]) => column);
     const cellRows = cells.map(([, row]) => row);
@@ -59,7 +66,7 @@ describe("openingMatch", () => {
   });
 
   test("keeps the ball glued on top of the paddle", () => {
-    const match = openingMatch();
+    const match = openingMatch(normal);
 
     expect(match.ball).toEqual({ x: match.paddle, y: servedBallY });
   });
@@ -67,7 +74,7 @@ describe("openingMatch", () => {
 
 describe("serve", () => {
   test("moves the paddle by the elapsed time and carries the ball along", () => {
-    const opening = openingMatch();
+    const opening = openingMatch(normal);
 
     const short = step(opening, frame({ direction: "right", elapsedMs: 10 }));
     const long = step(opening, frame({ direction: "right", elapsedMs: 20 }));
@@ -79,14 +86,14 @@ describe("serve", () => {
   });
 
   test("keeps the paddle still without a direction", () => {
-    const opening = openingMatch();
+    const opening = openingMatch(normal);
 
     expect(step(opening, frame()).paddle).toBe(opening.paddle);
   });
 
   test("stops the paddle at the side walls", () => {
-    const left = stepFrames(openingMatch(), 200, { direction: "left", elapsedMs: 100 });
-    const right = stepFrames(openingMatch(), 200, { direction: "right", elapsedMs: 100 });
+    const left = stepFrames(openingMatch(normal), 200, { direction: "left", elapsedMs: 100 });
+    const right = stepFrames(openingMatch(normal), 200, { direction: "right", elapsedMs: 100 });
 
     expect(left.paddle).toBe(paddleWidth / 2);
     expect(left.ball.x).toBe(paddleWidth / 2);
@@ -109,7 +116,7 @@ function launched(match: Match, direction: Frame["direction"] = "none"): Match {
 
 describe("launch", () => {
   test("releases the ball up and slightly to the side", () => {
-    const released = launched(openingMatch());
+    const released = launched(openingMatch(normal));
     const flying = step(released, frame({ elapsedMs: 10 }));
     const toward = heading(released, flying);
 
@@ -120,12 +127,12 @@ describe("launch", () => {
   });
 
   test("uses the same heading wherever the paddle is and whichever way it moves", () => {
-    const fromCenter = launched(openingMatch());
+    const fromCenter = launched(openingMatch(normal));
     const fromLeftWall = launched(
-      stepFrames(openingMatch(), 20, { direction: "left", elapsedMs: 100 }),
+      stepFrames(openingMatch(normal), 20, { direction: "left", elapsedMs: 100 }),
       "left",
     );
-    const movingRight = launched(openingMatch(), "right");
+    const movingRight = launched(openingMatch(normal), "right");
 
     const reference = heading(fromCenter, step(fromCenter, frame()));
     const leftWallHeading = heading(fromLeftWall, step(fromLeftWall, frame()));
@@ -140,7 +147,7 @@ describe("launch", () => {
 
 describe("flight", () => {
   test("moves the ball along a fixed heading by the elapsed time", () => {
-    const released = launched(openingMatch());
+    const released = launched(openingMatch(normal));
     const short = step(released, frame({ elapsedMs: 10 }));
     const long = step(released, frame({ elapsedMs: 20 }));
     const chained = step(short, frame({ elapsedMs: 10 }));
@@ -152,7 +159,7 @@ describe("flight", () => {
   });
 
   test("ignores the paddle direction when steering the ball", () => {
-    const released = launched(openingMatch());
+    const released = launched(openingMatch(normal));
 
     const still = step(released, frame({ elapsedMs: 20 }));
     const steered = step(released, frame({ elapsedMs: 20, direction: "left" }));
@@ -178,7 +185,7 @@ function flight(
   overrides: Partial<Pick<Match, "bricks" | "paddle" | "lives" | "score">> = {},
 ): Match {
   return {
-    ...openingMatch(),
+    ...openingMatch(normal),
     bricks: bricksAt(farBrick),
     paddle: boardWidth - paddleWidth / 2,
     ...overrides,
@@ -471,20 +478,20 @@ describe("after the match ends", () => {
     ["won", won],
     ["lost", lost],
   ])("%s still listens to a new match", (_name, ended) => {
-    expect(step(ended, frame({ events: ["new-match"] }))).toEqual(openingMatch());
+    expect(step(ended, frame({ events: ["new-match"] }))).toEqual(openingMatch(normal));
   });
 });
 
 describe("pause", () => {
-  const flying = step(launched(openingMatch()), frame({ elapsedMs: 50 }));
+  const flying = step(launched(openingMatch(normal)), frame({ elapsedMs: 50 }));
 
   test("pauses a serve and a flight", () => {
-    expect(step(openingMatch(), frame({ events: ["pause"] })).situation).toBe("paused-serve");
+    expect(step(openingMatch(normal), frame({ events: ["pause"] })).situation).toBe("paused-serve");
     expect(step(flying, frame({ events: ["pause"] })).situation).toBe("paused-flight");
   });
 
   test("holds the ball and the paddle against elapsed time and direction", () => {
-    const pausedServe = step(openingMatch(), frame({ events: ["pause"] }));
+    const pausedServe = step(openingMatch(normal), frame({ events: ["pause"] }));
     const pausedFlight = step(flying, frame({ events: ["pause"] }));
 
     expect(step(pausedServe, frame({ direction: "left", elapsedMs: 100 }))).toEqual(pausedServe);
@@ -499,7 +506,7 @@ describe("pause", () => {
   });
 
   test("keeps the ball on the paddle when paused with a launch", () => {
-    const paused = step(openingMatch(), frame({ events: ["pause", "launch"] }));
+    const paused = step(openingMatch(normal), frame({ events: ["pause", "launch"] }));
     const stillPaused = step(paused, frame({ events: ["launch"] }));
 
     expect(paused.situation).toBe("paused-serve");
@@ -508,9 +515,9 @@ describe("pause", () => {
 });
 
 describe("resume", () => {
-  const flying = step(launched(openingMatch()), frame({ elapsedMs: 50 }));
+  const flying = step(launched(openingMatch(normal)), frame({ elapsedMs: 50 }));
   const pausedFlight = step(flying, frame({ events: ["pause"] }));
-  const pausedServe = step(openingMatch(), frame({ events: ["pause"] }));
+  const pausedServe = step(openingMatch(normal), frame({ events: ["pause"] }));
 
   test("continues the flight for the rest of the frame", () => {
     const resumed = step(pausedFlight, frame({ events: ["resume"], elapsedMs: 20 }));
@@ -536,20 +543,22 @@ describe("resume", () => {
 
   test("wins over a pause in the same frame", () => {
     expect(step(pausedServe, frame({ events: ["resume", "pause"] })).situation).toBe("serve");
-    expect(step(openingMatch(), frame({ events: ["pause", "resume"] })).situation).toBe("serve");
+    expect(step(openingMatch(normal), frame({ events: ["pause", "resume"] })).situation).toBe(
+      "serve",
+    );
     expect(step(flying, frame({ events: ["pause", "resume"] })).situation).toBe("flight");
   });
 });
 
 describe("new match", () => {
-  const flying = step(launched(openingMatch()), frame({ elapsedMs: 50 }));
+  const flying = step(launched(openingMatch(normal)), frame({ elapsedMs: 50 }));
 
   test.each([
-    ["serve", stepFrames(openingMatch(), 3, { direction: "left" })],
+    ["serve", stepFrames(openingMatch(normal), 3, { direction: "left" })],
     ["flight", flying],
     ["paused flight", step(flying, frame({ events: ["pause"] }))],
   ])("starts over from a %s", (_name, match) => {
-    expect(step(match, frame({ events: ["new-match"] }))).toEqual(openingMatch());
+    expect(step(match, frame({ events: ["new-match"] }))).toEqual(openingMatch(normal));
   });
 
   test("throws away the rest of the frame", () => {
@@ -558,6 +567,55 @@ describe("new match", () => {
       frame({ events: ["launch", "new-match", "pause"], direction: "left", elapsedMs: 50 }),
     );
 
-    expect(next).toEqual(openingMatch());
+    expect(next).toEqual(openingMatch(normal));
+  });
+});
+
+describe("rules", () => {
+  const nimble: Rules = { paddleSpeed: 0.8, ballSpeed: 0.6, lives: 5 };
+
+  test("the paddle moves at the paddle speed of the match", () => {
+    const opening = openingMatch(nimble);
+
+    expect(step(opening, frame({ direction: "right", elapsedMs: 10 })).paddle).toBeCloseTo(
+      opening.paddle + 8,
+    );
+  });
+
+  test("the ball launches at the ball speed of the match", () => {
+    expect(speedAfter(launched(openingMatch(nimble)))).toBeCloseTo(0.6);
+  });
+
+  test("the match opens with the lives of the rules", () => {
+    expect(openingMatch(nimble).lives).toBe(5);
+  });
+
+  test("a match on a single life is lost on the first miss", () => {
+    const next = step(
+      {
+        ...openingMatch({ ...normal, lives: 1 }),
+        situation: "flight",
+        ball: { x: 100, y: 290 },
+        velocity: { x: 0, y: 0.1 },
+      },
+      frame({ elapsedMs: 100 }),
+    );
+
+    expect(next.situation).toBe("lost");
+  });
+
+  test("rules chosen during the match leave its speeds alone", () => {
+    const served = openingMatch(normal);
+    const moved = step(served, frame({ direction: "right", elapsedMs: 10 }), nimble);
+    const released = step(served, frame({ events: ["launch"] }), nimble);
+
+    expect(moved.paddle).toBeCloseTo(served.paddle + 4);
+    expect(speedAfter(released)).toBeCloseTo(0.3);
+  });
+
+  test("a new match opens on the rules chosen by then", () => {
+    const flying = step(launched(openingMatch(normal)), frame({ elapsedMs: 50 }));
+
+    expect(step(flying, frame({ events: ["new-match"] }), nimble)).toEqual(openingMatch(nimble));
   });
 });

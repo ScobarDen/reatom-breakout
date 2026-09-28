@@ -2,7 +2,8 @@ import { type Computed, action, atom, computed, reatomEnum } from "@reatom/core"
 
 import { ballRadius } from "../breakout.config.ts";
 import { type Box, brickBox, paddleBox } from "../model/board.model.ts";
-import { type Situation, type Vector, openingMatch } from "../model/match.model.ts";
+import { type Situation, type Vector, openingBricks, openingMatch } from "../model/match.model.ts";
+import { type Rules, difficultyRules } from "../model/rules.model.ts";
 import { type MatchEvent, type PaddleDirection, step } from "../model/step.model.ts";
 
 const maxElapsedMs = 100;
@@ -17,7 +18,9 @@ export interface Brick {
   readonly standing: Computed<boolean>;
 }
 
-export const match = atom(openingMatch, "_match");
+const rules = atom<Rules>(difficultyRules.normal, "_rules");
+
+export const match = atom(() => openingMatch(rules()), "_match");
 const pendingEvents = atom<readonly MatchEvent[]>([], "_pendingEvents");
 
 export const ball: Computed<Ball> = computed((shown?: Ball) => {
@@ -34,7 +37,7 @@ export const score: Computed<number> = computed(() => match().score, "score");
 export const lives: Computed<number> = computed(() => match().lives, "lives");
 export const situation: Computed<Situation> = computed(() => match().situation, "situation");
 
-export const bricks: readonly Brick[] = openingMatch().bricks.flatMap((cells, column) =>
+export const bricks: readonly Brick[] = openingBricks().flatMap((cells, column) =>
   cells.flatMap((laid, row) =>
     laid
       ? [
@@ -75,10 +78,14 @@ export function advance(elapsedMs: number): void {
 
   pendingEvents.set([]);
   match.set(
-    step(match(), {
-      direction: paddleDirection(),
-      events,
-      elapsedMs: Math.min(elapsedMs, maxElapsedMs),
-    }),
+    step(
+      match(),
+      {
+        direction: paddleDirection(),
+        events,
+        elapsedMs: Math.min(elapsedMs, maxElapsedMs),
+      },
+      rules(),
+    ),
   );
 }

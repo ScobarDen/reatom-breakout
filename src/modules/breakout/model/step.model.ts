@@ -1,7 +1,8 @@
-import { brickPoints, launchVelocity, paddleSpeed } from "../breakout.config.ts";
+import { brickPoints } from "../breakout.config.ts";
 import { keepPaddleOnBoard, servedBall } from "./board.model.ts";
 import { fly } from "./flight.model.ts";
 import { type Match, openingMatch } from "./match.model.ts";
+import { type Rules, launchVelocity } from "./rules.model.ts";
 
 export type PaddleDirection = "left" | "right" | "none";
 export type MatchEvent = "launch" | "pause" | "resume" | "new-match";
@@ -16,8 +17,10 @@ type Airborne = Extract<Match, { velocity: unknown }>;
 
 const directionSign: Record<PaddleDirection, number> = { left: -1, right: 1, none: 0 };
 
-function movePaddle(paddle: number, direction: PaddleDirection, elapsedMs: number): number {
-  return keepPaddleOnBoard(paddle + directionSign[direction] * paddleSpeed * elapsedMs);
+function movePaddle(match: Match, direction: PaddleDirection, elapsedMs: number): number {
+  return keepPaddleOnBoard(
+    match.paddle + directionSign[direction] * match.rules.paddleSpeed * elapsedMs,
+  );
 }
 
 function playFlight(match: Airborne, paddle: number, elapsedMs: number): Match {
@@ -31,6 +34,7 @@ function playFlight(match: Airborne, paddle: number, elapsedMs: number): Match {
     bricks: flown.bricks,
     paddle,
     lives: match.lives,
+    rules: match.rules,
     score: match.score + flown.destroyed * brickPoints,
   };
 
@@ -78,9 +82,9 @@ function togglePause(match: Match, events: readonly MatchEvent[]): Match {
   return match;
 }
 
-export function step(match: Match, frame: Frame): Match {
+export function step(match: Match, frame: Frame, nextRules: Rules): Match {
   if (frame.events.includes("new-match")) {
-    return openingMatch();
+    return openingMatch(nextRules);
   }
   if (match.situation === "won" || match.situation === "lost") {
     return match;
@@ -92,7 +96,7 @@ export function step(match: Match, frame: Frame): Match {
     return live;
   }
 
-  const paddle = movePaddle(live.paddle, frame.direction, frame.elapsedMs);
+  const paddle = movePaddle(live, frame.direction, frame.elapsedMs);
 
   if (live.situation === "flight") {
     return playFlight(live, paddle, frame.elapsedMs);
@@ -101,7 +105,7 @@ export function step(match: Match, frame: Frame): Match {
   const served: Match = { ...live, paddle, ball: servedBall(paddle) };
 
   if (frame.events.includes("launch")) {
-    return { ...served, situation: "flight", velocity: launchVelocity };
+    return { ...served, situation: "flight", velocity: launchVelocity(live.rules.ballSpeed) };
   }
 
   return served;

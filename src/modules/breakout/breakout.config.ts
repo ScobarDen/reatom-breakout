@@ -9,14 +9,6 @@ export const ballRadius = 5;
 
 export const firstBrickRow = 2;
 export const brickRowCount = 5;
-export const startingLives = 3;
-export const paddleSpeed = 0.4;
-export const ballSpeed = 0.3;
-const launchSlope = 0.3;
-
-export const launchVelocity = {
-  x: (ballSpeed * launchSlope) / Math.hypot(launchSlope, 1),
-  y: -ballSpeed / Math.hypot(launchSlope, 1),
-};
+export const launchSlope = 0.3;
 export const brickPoints = 10;
 export const maxPaddleBounceAngle = Math.PI / 3;

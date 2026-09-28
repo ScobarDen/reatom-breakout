@@ -2,6 +2,7 @@ import { type Computed, context, sleep } from "@reatom/core";
 
 import { paddleBox } from "../model/board.model.ts";
 import { openingMatch } from "../model/match.model.ts";
+import { difficultyRules } from "../model/rules.model.ts";
 import * as vm from "./breakout.vm.ts";
 
 type Spy = ReturnType<typeof vi.fn>;
@@ -55,7 +56,7 @@ beforeEach(() => {
 });
 
 describe("the public surface", () => {
-  test("exposes the picture, the input and the tick, and no match", async () => {
+  test("exposes the picture, the input, the tick and the rules, and no match", async () => {
     const breakout = await import("../index.ts");
 
     expect(Object.keys(breakout).toSorted()).toEqual([
@@ -64,10 +65,13 @@ describe("the public surface", () => {
       "board",
       "bricks",
       "controlsHint",
+      "difficultyRules",
       "lives",
       "matchControls",
       "paddle",
       "paddleDirection",
+      "ruleBounds",
+      "rulesWithinBounds",
       "score",
       "situation",
       "situationLabel",
@@ -77,7 +81,7 @@ describe("the public surface", () => {
 
 describe("before the first frame", () => {
   test("holds the opening serve", () => {
-    const opening = openingMatch();
+    const opening = openingMatch(difficultyRules.normal);
 
     expect(vm.situation()).toBe("serve");
     expect(vm.lives()).toBe(opening.lives);
@@ -167,7 +171,7 @@ describe("the picture diff", () => {
   });
 
   test("writes the moved paddle and ball before advance returns", () => {
-    const opening = openingMatch();
+    const opening = openingMatch(difficultyRules.normal);
 
     vm.paddleSteering.setRight();
     vm.advance(16);
@@ -241,7 +245,7 @@ describe("the paddle direction", () => {
   });
 
   test("moves the paddle while held and stops it once released", () => {
-    const opening = openingMatch();
+    const opening = openingMatch(difficultyRules.normal);
 
     vm.paddleSteering.setRight();
     vm.advance(16);
@@ -284,7 +288,7 @@ describe("the drawn board", () => {
     const x = (target.box.left + target.box.right) / 2;
 
     vm.match.set({
-      ...openingMatch(),
+      ...openingMatch(difficultyRules.normal),
       situation: "flight",
       ball: { x, y: target.box.bottom + vm.ball().radius + 5 },
       velocity: { x: 0, y: -0.1 },
@@ -300,9 +304,9 @@ describe("the drawn board", () => {
     const y = (target.box.top + target.box.bottom) / 2;
 
     vm.match.set({
-      ...openingMatch(),
+      ...openingMatch(difficultyRules.normal),
       situation: "flight",
-      bricks: openingMatch().bricks.map((cells, column) =>
+      bricks: openingMatch(difficultyRules.normal).bricks.map((cells, column) =>
         cells.map((_laid, row) => row === 6 && (column === 0 || column === 9)),
       ),
       ball: { x: target.box.right + vm.ball().radius + 5, y },
@@ -319,7 +323,7 @@ describe("the drawn board", () => {
     const x = paddleCentre();
 
     vm.match.set({
-      ...openingMatch(),
+      ...openingMatch(difficultyRules.normal),
       situation: "flight",
       ball: { x, y: top - vm.ball().radius - 5 },
       velocity: { x: 0, y: 0.1 },

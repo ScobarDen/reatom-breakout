@@ -1,12 +1,6 @@
-import {
-  boardWidth,
-  brickRowCount,
-  columns,
-  firstBrickRow,
-  rows,
-  startingLives,
-} from "../breakout.config.ts";
+import { boardWidth, brickRowCount, columns, firstBrickRow, rows } from "../breakout.config.ts";
 import { servedBall } from "./board.model.ts";
+import type { Rules } from "./rules.model.ts";
 
 export interface Vector {
   readonly x: number;
@@ -21,6 +15,7 @@ interface MatchCommon {
   readonly ball: Vector;
   readonly lives: number;
   readonly score: number;
+  readonly rules: Rules;
 }
 
 export type Match = MatchCommon &
@@ -31,20 +26,25 @@ export type Match = MatchCommon &
 
 export type Situation = Match["situation"];
 
-export function openingMatch(): Match {
+export function openingBricks(): Bricks {
+  return Array.from({ length: columns }, () =>
+    Array.from(
+      { length: rows },
+      (_cell, row) => row >= firstBrickRow && row < firstBrickRow + brickRowCount,
+    ),
+  );
+}
+
+export function openingMatch(rules: Rules): Match {
   const paddle = boardWidth / 2;
 
   return {
     situation: "serve",
-    bricks: Array.from({ length: columns }, () =>
-      Array.from(
-        { length: rows },
-        (_cell, row) => row >= firstBrickRow && row < firstBrickRow + brickRowCount,
-      ),
-    ),
+    bricks: openingBricks(),
     paddle,
     ball: servedBall(paddle),
-    lives: startingLives,
+    lives: rules.lives,
     score: 0,
+    rules,
   };
 }

@@ -41,26 +41,17 @@ const roles: readonly Role[] = [
 ];
 
 const bareImport: ImportPattern = { regex: "^(@|[A-Za-z])" };
-const webHost: readonly ImportPattern[] = [
-  { group: ["@opentui/*"] },
-  { regex: "[/.]terminal([/.]|$)" },
-];
-const terminalHost: readonly ImportPattern[] = [
+const buildSpecific: readonly ImportPattern[] = [
   { group: ["@reatom/jsx"] },
-  { regex: "[/.]web([/.]|$)" },
+  { regex: "(^|/)pages(/|$)" },
+  { regex: "modules/screens" },
 ];
 const tickImport: ImportPattern = { importNames: ["advance"], regex: "modules/breakout" };
 
 const areas: readonly Area[] = [
   { dir: "src/modules/breakout", roles: ["config", "model", "model-test"], patterns: [bareImport] },
-  { dir: "src/app/web", patterns: webHost },
-  { dir: "src/app/terminal", patterns: terminalHost },
-  { dir: "src/common/frame-rate", patterns: webHost },
+  { dir: "src/app/shell", patterns: buildSpecific },
   { dir: "src/pages", patterns: [tickImport] },
-  { dir: "src/pages/web", patterns: [...webHost, tickImport] },
-  { dir: "src/pages/terminal", patterns: [...terminalHost, tickImport] },
-  { dir: "src/pages/web", roles: ["test"], patterns: webHost },
-  { dir: "src/pages/terminal", roles: ["test"], patterns: terminalHost },
 ];
 
 function restrict(patterns: readonly ImportPattern[]): OxlintOverride["rules"] {

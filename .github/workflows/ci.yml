@@ -20,7 +20,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: ./.github/actions/setup
-      - run: pnpm exec vp check
+      - run: vp check
 
   boundaries:
     name: FEOD boundaries
@@ -28,7 +28,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: ./.github/actions/setup
-      - run: pnpm exec vp run boundaries
+      - run: vp run boundaries
 
   test:
     name: Tests and coverage
@@ -36,7 +36,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: ./.github/actions/setup
-      - run: pnpm exec vp test run --coverage
+      - run: vp test run --coverage
       - run: node scripts/coverage-summary.ts
         if: ${{ !cancelled() }}
 
@@ -46,7 +46,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: ./.github/actions/setup
-      - run: pnpm exec vp build
+      - run: vp build
       - uses: actions/upload-pages-artifact@v5
         if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
         with:

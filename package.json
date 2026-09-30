@@ -14,9 +14,10 @@
     "@feod/analyzer": "0.1.1",
     "@stylistic/eslint-plugin": "5.10.0",
     "@types/node": "24.13.6",
-    "@vitest/coverage-v8": "4.1.11",
+    "@vitest/coverage-v8": "catalog:",
     "vite": "catalog:",
-    "vite-plus": "catalog:"
+    "vite-plus": "catalog:",
+    "vitest": "catalog:"
   },
   "packageManager": "pnpm@12.5.1"
 }

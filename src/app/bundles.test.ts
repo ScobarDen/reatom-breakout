@@ -83,7 +83,7 @@ describe("the bundles", () => {
   });
 
   test("only the React build carries React", () => {
-    expect(carries(modulesOf(chunks, "jsx"), "react-dom")).toBe(false);
-    expect(carries(modulesOf(chunks, "dom"), "react-dom")).toBe(false);
+    expect(carries(modulesOf(chunks, "jsx"), "react")).toBe(false);
+    expect(carries(modulesOf(chunks, "dom"), "react")).toBe(false);
   });
 });

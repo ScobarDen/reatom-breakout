@@ -1,11 +1,13 @@
 // @vitest-environment happy-dom
-import { context, noop, sleep, urlAtom } from "@reatom/core";
+import { context, sleep } from "@reatom/core";
 import { act, createElement } from "react";
 import { type Root, createRoot } from "react-dom/client";
 
-import { advance, bricks, matchControls } from "@/modules/breakout";
+import { bricks } from "@/modules/breakout";
 import { screenNavigation } from "@/modules/screens";
 import { ScreensLayout } from "@/pages/react";
+
+import { playUntilBrickBreaks, visit } from "../play.testing.ts";
 
 const renders = vi.hoisted(() => new Map<string, number>());
 
@@ -37,20 +39,9 @@ function renderLayout(): void {
   });
 }
 
-function playUntilBrickBreaks(): void {
-  const controls = matchControls();
-
-  controls.press("space", false);
-  controls.press("right", false);
-  for (let frame = 0; frame < 10_000 && bricks.every(({ standing }) => standing()); frame++) {
-    advance(16);
-  }
-}
-
 beforeEach(() => {
   context.reset();
-  urlAtom.sync.set(() => noop);
-  urlAtom.syncFromSource(new URL("https://example.test/reatom-breakout/"));
+  visit("https://example.test/reatom-breakout/");
   renders.clear();
 });
 
@@ -69,7 +60,7 @@ describe("the React view", () => {
     expect(renders.get("BrickRect")).toBe(bricks.length);
   });
 
-  test("renders again only the bricks that broke", async () => {
+  test("renders again only the bricks that broke, not the board", async () => {
     renderLayout();
     playUntilBrickBreaks();
     await act(() => sleep(0));
@@ -77,5 +68,6 @@ describe("the React view", () => {
 
     expect(broken).toBeGreaterThan(0);
     expect(renders.get("BrickRect")).toBe(bricks.length + broken);
+    expect(renders.get("ScreensLayout")).toBe(1);
   });
 });

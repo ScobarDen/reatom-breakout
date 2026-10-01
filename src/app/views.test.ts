@@ -1,14 +1,15 @@
 // @vitest-environment happy-dom
-import { context, noop, sleep, urlAtom } from "@reatom/core";
+import { context, sleep } from "@reatom/core";
 import { DEBUG, h as element, mount } from "@reatom/jsx";
 import { act, createElement } from "react";
 import { type Root, createRoot } from "react-dom/client";
 
-import { advance, bricks, matchControls } from "@/modules/breakout";
 import { type ScreenNavigation, screenNavigation } from "@/modules/screens";
 import { screensLayout } from "@/pages/dom";
 import { ScreensLayout as JsxScreensLayout } from "@/pages/jsx";
 import { ScreensLayout as ReactScreensLayout } from "@/pages/react";
+
+import { playUntilBrickBreaks, visit } from "./play.testing.ts";
 
 interface View {
   readonly name: string;
@@ -42,11 +43,6 @@ const views: readonly View[] = [
   },
 ];
 
-function visit(href: string): void {
-  urlAtom.sync.set(() => noop);
-  urlAtom.syncFromSource(new URL(href));
-}
-
 function renderBesideJsx(view: View): {
   navigation: ScreenNavigation;
   markup: () => Promise<Markup>;
@@ -67,16 +63,6 @@ function renderBesideJsx(view: View): {
       return { reference: reference.innerHTML, view: root.innerHTML };
     },
   };
-}
-
-function playUntilBrickBreaks(): void {
-  const controls = matchControls();
-
-  controls.press("space", false);
-  controls.press("right", false);
-  for (let frame = 0; frame < 10_000 && bricks.every(({ standing }) => standing()); frame++) {
-    advance(16);
-  }
 }
 
 vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);

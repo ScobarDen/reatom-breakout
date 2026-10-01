@@ -47,12 +47,6 @@ const jsxRuntime: ImportPattern = { group: ["@reatom/jsx", "@reatom/jsx/*"] };
 const reactRuntime: ImportPattern = {
   group: ["react", "react/*", "react-dom", "react-dom/*", "@reatom/react"],
 };
-const buildSpecific: readonly ImportPattern[] = [
-  jsxRuntime,
-  reactRuntime,
-  { regex: "(^|/)pages(/|$)" },
-  { regex: "modules/screens" },
-];
 const tickImport: ImportPattern = { importNames: ["advance"], regex: "modules/breakout" };
 
 const buildRuntimes: Readonly<Record<string, readonly ImportPattern[]>> = {
@@ -60,6 +54,12 @@ const buildRuntimes: Readonly<Record<string, readonly ImportPattern[]>> = {
   dom: [],
   react: [reactRuntime],
 };
+
+const buildSpecific: readonly ImportPattern[] = [
+  ...Object.values(buildRuntimes).flat(),
+  { regex: "(^|/)pages(/|$)" },
+  { regex: "modules/screens" },
+];
 
 function pagesOf(build: string): ImportPattern {
   return { regex: `(^|/)pages/${build}(/|$)` };

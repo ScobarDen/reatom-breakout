@@ -54,8 +54,8 @@ function Board() {
       width={board.width * scale}
       height={board.height * scale}
     >
-      {bricks.map((brick) => (
-        <BrickRect key={brick.standing.name} brick={brick} />
+      {bricks.map((brick, index) => (
+        <BrickRect key={index} brick={brick} />
       ))}
       <PaddleRect />
       <BallCircle />

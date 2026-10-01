@@ -20,7 +20,8 @@ Read `docs/architecture.md` before touching code: levels, file roles, the frame 
 - Board geometry (brick, paddle, serve point, wall limits) lives only in `model/board.model.ts`; physics and views both read it. Views never derive sizes from config.
 - Builds see the module only through `src/modules/breakout/index.ts`; the test "the public surface" pins its exports, so change it deliberately.
 - Only `app/` calls `advance`. Views are passive: the frame loop and key translation live in `app/shell`.
-- `app/shell` never imports `@reatom/jsx`, `pages/`, or `modules/screens`: builds without screens (canvas, sound) reuse it (ADR-0004).
+- `app/shell` never imports `@reatom/jsx`, React, `pages/`, or `modules/screens`: builds without screens (canvas, sound) reuse it (ADR-0004).
+- JSX compiles to the classic `h` of `@reatom/jsx` everywhere except `pages/react`, whose `.tsx` files open with the `@jsxRuntime automatic` and `@jsxImportSource react` pragmas.
 - Full builds (jsx, DOM, React) share one markup and the classes in `app/styles/breakout.css`.
 
 ## Commands
@@ -28,7 +29,7 @@ Read `docs/architecture.md` before touching code: levels, file roles, the frame 
 - `vp test run`: tests once (`vp test` watches).
 - `vp check`: format, lint, and types; `vp check --fix` to fix.
 - `vp run boundaries`: FEOD level check.
-- `vp dev`: every build on port 5173, at `/jsx/` and `/dom/`.
+- `vp dev`: every build on port 5173, at `/jsx/`, `/dom/` and `/react/`.
 
 CI (`.github/workflows/ci.yml`) runs the same checks plus `vp build` as separate jobs and deploys the build to GitHub Pages from `main`. A change is done when `vp check`, `vp run boundaries`, and `vp test run` are green. The commit hook runs `vp check --fix` on staged files.
 

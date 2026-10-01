@@ -44,25 +44,47 @@ const roles: readonly Role[] = [
 
 const bareImport: ImportPattern = { regex: "^(@|[A-Za-z])" };
 const jsxRuntime: ImportPattern = { group: ["@reatom/jsx", "@reatom/jsx/*"] };
+const reactRuntime: ImportPattern = {
+  group: ["react", "react/*", "react-dom", "react-dom/*", "@reatom/react"],
+};
+const tickImport: ImportPattern = { importNames: ["advance"], regex: "modules/breakout" };
+
+const buildRuntimes: Readonly<Record<string, readonly ImportPattern[]>> = {
+  jsx: [jsxRuntime],
+  dom: [],
+  react: [reactRuntime],
+};
+
 const buildSpecific: readonly ImportPattern[] = [
-  jsxRuntime,
+  ...Object.values(buildRuntimes).flat(),
   { regex: "(^|/)pages(/|$)" },
   { regex: "modules/screens" },
 ];
-const tickImport: ImportPattern = { importNames: ["advance"], regex: "modules/breakout" };
 
-function pagesOf(name: string): ImportPattern {
-  return { regex: `(^|/)pages/${name}(/|$)` };
+function pagesOf(build: string): ImportPattern {
+  return { regex: `(^|/)pages/${build}(/|$)` };
+}
+
+function foreignTo(build: string): ImportPattern[] {
+  const foreign: ImportPattern[] = [];
+
+  for (const [name, runtimes] of Object.entries(buildRuntimes)) {
+    if (name !== build) {
+      foreign.push(...runtimes, pagesOf(name));
+    }
+  }
+
+  return foreign;
 }
 
 const areas: readonly Area[] = [
   { dir: "src/modules/breakout", roles: ["config", "model", "model-test"], patterns: [bareImport] },
   { dir: "src/app/shell", patterns: buildSpecific },
-  { dir: "src/app/jsx", patterns: [pagesOf("dom")] },
-  { dir: "src/app/dom", patterns: [jsxRuntime, pagesOf("jsx")] },
   { dir: "src/pages", patterns: [tickImport] },
-  { dir: "src/pages/jsx", patterns: [tickImport, pagesOf("dom")] },
-  { dir: "src/pages/dom", patterns: [tickImport, jsxRuntime, pagesOf("jsx")] },
+  ...Object.keys(buildRuntimes).flatMap((build) => [
+    { dir: `src/app/${build}`, patterns: foreignTo(build) },
+    { dir: `src/pages/${build}`, patterns: [tickImport, ...foreignTo(build)] },
+  ]),
 ];
 
 function restrict(patterns: readonly ImportPattern[]): OxlintOverride["rules"] {
@@ -95,6 +117,7 @@ export default defineConfig({
         landing: path.resolve(import.meta.dirname, "index.html"),
         jsx: path.resolve(import.meta.dirname, "jsx/index.html"),
         dom: path.resolve(import.meta.dirname, "dom/index.html"),
+        react: path.resolve(import.meta.dirname, "react/index.html"),
       },
     },
   },

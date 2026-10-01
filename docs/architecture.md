@@ -6,12 +6,12 @@
 
 Код разложен по уровням FEOD. Импортировать можно только вниз: `app → pages → modules → common`.
 
-| Уровень    | Что лежит                                    | Кто здесь                                         |
-| ---------- | -------------------------------------------- | ------------------------------------------------- |
-| `app/`     | точки входа сборок и всё, что живёт один раз | `shell/`, `jsx/main.ts`, `dom/main.ts`, `styles/` |
-| `pages/`   | View одной сборки                            | `jsx/`, `dom/`                                    |
-| `modules/` | переиспользуемые фичи с публичным `index.ts` | `breakout/`, `screens/`                           |
-| `common/`  | мелочи без предметной логики                 | `frame-rate/`                                     |
+| Уровень    | Что лежит                                    | Кто здесь                                     |
+| ---------- | -------------------------------------------- | --------------------------------------------- |
+| `app/`     | точки входа сборок и всё, что живёт один раз | `shell/`, `jsx/`, `dom/`, `react/`, `styles/` |
+| `pages/`   | View одной сборки                            | `jsx/`, `dom/`, `react/`                      |
+| `modules/` | переиспользуемые фичи с публичным `index.ts` | `breakout/`, `screens/`                       |
+| `common/`  | мелочи без предметной логики                 | `frame-rate/`                                 |
 
 Модуль виден снаружи только через свой `index.ts`. Уровни проверяет `vp run boundaries` (`feod-analyzer`, конфиг в `feod-analyzer.yml`).
 
@@ -29,9 +29,9 @@
 Поверх ролей действуют правила зон (`areas` в том же файле):
 
 - config и model модуля `breakout` не импортируют пакеты вообще. Физика не может случайно подцепить Reatom или DOM.
-- Общая оболочка `app/shell` не видит `@reatom/jsx`, `pages/` и модуль `screens`: её возьмут и сборки без экранов (canvas, звук), и им не нужно тащить чужую View.
+- Общая оболочка `app/shell` не видит `@reatom/jsx`, React, `pages/` и модуль `screens`: её возьмут и сборки без экранов (canvas, звук), и им не нужно тащить чужую View.
 - `pages/` не импортируют `advance`: тиком управляет только `app/`.
-- Каждая сборка — своя зона: `pages/dom` и `app/dom` не видят `@reatom/jsx` и `pages/jsx`, а jsx-сборка не видит `pages/dom`.
+- Каждая сборка — своя зона: `pages/<сборка>` и `app/<сборка>` не видят чужие `pages/` и чужой рантайм. jsx-сборке закрыт React, React-сборке закрыт `@reatom/jsx`, DOM-сборке закрыты оба. Зоны строятся из `buildRuntimes` в `vite.config.ts`.
 
 ## Модуль `breakout`
 
@@ -108,7 +108,8 @@ step.model.ts            новый Match
 computed                 ball, paddle, score, lives, situation, bricks[i].standing
    │
    ▼
-View                     jsx: подписка @reatom/jsx на каждый атрибут; DOM: effect на элемент переписывает его атрибуты
+View                     jsx: подписка @reatom/jsx на каждый атрибут; DOM: effect на элемент переписывает его атрибуты;
+                         React: reatomComponent перерисовывает компонент, прочитавший атом
 ```
 
 Кадр длиннее 100 мс (вкладку свернули, ноутбук уснул) обрезается, чтобы мяч не пролетел полполя за один шаг.
@@ -136,14 +137,21 @@ _pendingEvents                событие ждёт следующего advan
 
 ## Сборки
 
-Каждая сборка — своя HTML-страница и свой бандл: `jsx/index.html` и `dom/index.html` в корне репозитория, входы перечислены в `build.rolldownOptions.input`. Корневой `index.html` пока просто ссылается на обе.
+Каждая сборка — своя HTML-страница и свой бандл: `jsx/index.html`, `dom/index.html` и `react/index.html` в корне репозитория, входы перечислены в `build.rolldownOptions.input`. Корневой `index.html` пока просто ссылается на все три.
 
-| Сборка | Точка входа       | View        | Как обновляет разметку                                                 |
-| ------ | ----------------- | ----------- | ---------------------------------------------------------------------- |
-| jsx    | `app/jsx/main.ts` | `pages/jsx` | `@reatom/jsx` подписывает каждый атрибут сам                           |
-| DOM    | `app/dom/main.ts` | `pages/dom` | `document.createElement` и `effect(() => el.setAttribute(...))` руками |
+| Сборка | Точка входа         | View          | Как обновляет разметку                                                            |
+| ------ | ------------------- | ------------- | --------------------------------------------------------------------------------- |
+| jsx    | `app/jsx/main.ts`   | `pages/jsx`   | `@reatom/jsx` подписывает каждый атрибут сам                                      |
+| DOM    | `app/dom/main.ts`   | `pages/dom`   | `document.createElement` и `effect(() => el.setAttribute(...))` руками            |
+| React  | `app/react/main.ts` | `pages/react` | `reatomComponent` подписывает компонент на прочитанные атомы и перерисовывает его |
 
-Разметка и классы у них одни: поле в масштабе ×2, экраны ссылками сверху. Как и в jsx, сбитый кирпич будит только свой `effect`. Остальные сборки (React, canvas, звук) описаны в [ADR-0004](adr/0004-view-builds-instead-of-terminal-host.md). Последняя версия с терминальным хостом лежит под тегом `terminal-host`.
+Разметка и классы у них одни: поле в масштабе ×2, экраны ссылками сверху. Как и в jsx, сбитый кирпич будит только свой `effect`.
+
+В React-сборке каждый движущийся элемент — свой `reatomComponent`: платформа, мяч, HUD и подпись состояния. Поэтому кадр перерисовывает их, а не поле. Кирпич — `memo(reatomComponent(...))` и перерисовывается только когда падает сам.
+
+JSX во всём проекте компилируется в классический `h` из `@reatom/jsx` (`oxc.jsx` и `jsxInject` в `vite.config.ts`, `jsxImportSource` в `tsconfig.json`). Файлы `pages/react` переключаются на React двумя pragma в начале файла: `@jsxRuntime automatic` для oxc и `@jsxImportSource react` для oxc и TypeScript. `jsxInject` всё равно дописывает в них импорт `h` из `@reatom/jsx`, но он не используется, пакет помечен `sideEffects: false`, и в бандл React он не попадает. Это проверяет `app/bundles.test.ts`.
+
+Остальные сборки (canvas, звук) описаны в [ADR-0004](adr/0004-view-builds-instead-of-terminal-host.md). Последняя версия с терминальным хостом лежит под тегом `terminal-host`.
 
 Логгер (`app/shell/logger.ts`) подключается в dev. Покадровые `ball`, `paddle` и `paddleDirection` он скрывает, а приватные атомы с префиксом `_` Reatom прячет сам. В углу страницы в dev висит счётчик fps (`common/frame-rate`).
 
@@ -158,6 +166,7 @@ _pendingEvents                событие ждёт следующего advan
 | ввод     | `app/shell/keyboard.vm.test.ts` | перевод `KeyboardEvent.code`, `claimed`, отпускание при потере фокуса и вне Match                                             |
 | экраны   | `screens/vm/screens.vm.test.ts` | `?screen=` в адресе, ссылки на экраны и паузу при уходе с Match                                                               |
 | сборки   | `app/views.test.ts`             | контракт разметки: на одном состоянии VM каждая View выдаёт ту же разметку, что jsx (`describe.each` по View, happy-dom)      |
-| сборки   | `app/bundles.test.ts`           | собирает приложение и проверяет, что `@reatom/jsx` есть в бандле jsx и нет в бандле DOM                                       |
+| сборки   | `app/bundles.test.ts`           | собирает приложение и проверяет, что `@reatom/jsx` есть только в бандле jsx, а React — только в бандле React                  |
+| сборки   | `app/react/renders.test.ts`     | число рендеров кирпича в React: удар перерисовывает только сбитые кирпичи                                                     |
 
 Изоляцию даёт `context.reset()` в `beforeEach`: каждый тест начинает со свежего матча. Для VM-тестов vm-файл экспортирует атом `match` (в `index.ts` его нет), чтобы поставить мяч в нужную точку, не доигрывая до неё.

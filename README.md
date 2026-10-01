@@ -2,7 +2,7 @@
 
 🎮 **[Играть в браузере](https://scobarden.github.io/reatom-breakout/)**
 
-Арканоид в браузере, на котором показано, как держать правила игры отдельно от реактивности и от UI, а границы между слоями проверять линтером, а не код-ревью. Одна ViewModel должна работать под разными View: сейчас это `@reatom/jsx` + SVG и чистый DOM без биндинга, дальше — React, canvas и звук, каждая своей сборкой ([ADR-0004](docs/adr/0004-view-builds-instead-of-terminal-host.md)).
+Арканоид в браузере, на котором показано, как держать правила игры отдельно от реактивности и от UI, а границы между слоями проверять линтером, а не код-ревью. Одна ViewModel должна работать под разными View: сейчас это `@reatom/jsx` + SVG, чистый DOM без биндинга и React через `@reatom/react`, дальше — canvas и звук, каждая своей сборкой ([ADR-0004](docs/adr/0004-view-builds-instead-of-terminal-host.md)).
 
 ## Что здесь показано
 
@@ -25,7 +25,7 @@
 pnpm install
 ```
 
-Откроется на `http://localhost:5173`, сборки лежат на `/jsx/` и `/dom/`:
+Откроется на `http://localhost:5173`, сборки лежат на `/jsx/`, `/dom/` и `/react/`:
 
 ```bash
 vp dev
@@ -65,10 +65,12 @@ src/
 │   ├── shell/      общее у всех сборок: цикл кадров, клавиатура, логгер
 │   ├── jsx/        точка входа сборки на @reatom/jsx
 │   ├── dom/        точка входа сборки на чистом DOM
+│   ├── react/      точка входа сборки на React
 │   └── styles/     общий CSS полных сборок
 ├── pages/
 │   ├── jsx/        View на @reatom/jsx + SVG
-│   └── dom/        та же разметка через createElement и effect
+│   ├── dom/        та же разметка через createElement и effect
+│   └── react/      та же разметка на React-компонентах через reatomComponent
 ├── modules/
 │   ├── breakout/   правила игры (model) и картинка матча (vm)
 │   └── screens/    какой экран открыт и пауза при уходе с Match

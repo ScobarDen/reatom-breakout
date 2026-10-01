@@ -1,11 +1,14 @@
 // @vitest-environment happy-dom
 import { context, noop, sleep, urlAtom } from "@reatom/core";
 import { DEBUG, h as element, mount } from "@reatom/jsx";
+import { act, createElement } from "react";
+import { type Root, createRoot } from "react-dom/client";
 
 import { advance, bricks, matchControls } from "@/modules/breakout";
 import { type ScreenNavigation, screenNavigation } from "@/modules/screens";
 import { screensLayout } from "@/pages/dom";
 import { ScreensLayout as JsxScreensLayout } from "@/pages/jsx";
+import { ScreensLayout as ReactScreensLayout } from "@/pages/react";
 
 interface View {
   readonly name: string;
@@ -17,11 +20,24 @@ interface Markup {
   readonly view: string;
 }
 
+const reactRoots: Root[] = [];
+
 const views: readonly View[] = [
   {
     name: "DOM",
     render(root, navigation) {
       root.append(screensLayout(navigation));
+    },
+  },
+  {
+    name: "React",
+    render(root, navigation) {
+      const reactRoot = createRoot(root);
+
+      reactRoots.push(reactRoot);
+      act(() => {
+        reactRoot.render(createElement(ReactScreensLayout, { navigation }));
+      });
     },
   },
 ];
@@ -46,7 +62,7 @@ function renderBesideJsx(view: View): {
   return {
     navigation,
     async markup() {
-      await sleep(0);
+      await act(() => sleep(0));
 
       return { reference: reference.innerHTML, view: root.innerHTML };
     },
@@ -63,11 +79,21 @@ function playUntilBrickBreaks(): void {
   }
 }
 
+vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+
 beforeEach(() => {
   context.reset();
   DEBUG.set(false);
   visit("https://example.test/reatom-breakout/");
   document.body.replaceChildren();
+});
+
+afterEach(() => {
+  act(() => {
+    for (const reactRoot of reactRoots.splice(0)) {
+      reactRoot.unmount();
+    }
+  });
 });
 
 describe.each(views)("the $name view", (view) => {

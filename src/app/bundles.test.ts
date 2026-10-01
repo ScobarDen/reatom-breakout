@@ -24,7 +24,7 @@ function slashed(id: string): string {
   return id.replaceAll("\\", "/");
 }
 
-function modulesOf(chunks: readonly Chunk[], page: "jsx" | "dom"): readonly string[] {
+function modulesOf(chunks: readonly Chunk[], page: "jsx" | "dom" | "react"): readonly string[] {
   const byFile = new Map(chunks.map((chunk) => [chunk.fileName, chunk]));
   const entry = chunks.find(({ facadeModuleId }) =>
     slashed(facadeModuleId ?? "").endsWith(`/${page}/index.html`),
@@ -73,5 +73,17 @@ describe("the bundles", () => {
 
     expect(carries(modules, "@reatom/core")).toBe(true);
     expect(carries(modules, "@reatom/jsx")).toBe(false);
+  });
+
+  test("the React build carries @reatom/react without @reatom/jsx", () => {
+    const modules = modulesOf(chunks, "react");
+
+    expect(carries(modules, "@reatom/react")).toBe(true);
+    expect(carries(modules, "@reatom/jsx")).toBe(false);
+  });
+
+  test("only the React build carries React", () => {
+    expect(carries(modulesOf(chunks, "jsx"), "react-dom")).toBe(false);
+    expect(carries(modulesOf(chunks, "dom"), "react-dom")).toBe(false);
   });
 });

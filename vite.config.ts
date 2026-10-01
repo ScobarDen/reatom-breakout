@@ -1,3 +1,5 @@
+import path from "node:path";
+
 import { defineConfig } from "vite-plus";
 import type { OxlintOverride } from "vite-plus/lint";
 
@@ -41,17 +43,26 @@ const roles: readonly Role[] = [
 ];
 
 const bareImport: ImportPattern = { regex: "^(@|[A-Za-z])" };
+const jsxRuntime: ImportPattern = { group: ["@reatom/jsx", "@reatom/jsx/*"] };
 const buildSpecific: readonly ImportPattern[] = [
-  { group: ["@reatom/jsx"] },
+  jsxRuntime,
   { regex: "(^|/)pages(/|$)" },
   { regex: "modules/screens" },
 ];
 const tickImport: ImportPattern = { importNames: ["advance"], regex: "modules/breakout" };
 
+function pagesOf(build: string): ImportPattern {
+  return { regex: `(^|/)pages/${build}(/|$)` };
+}
+
 const areas: readonly Area[] = [
   { dir: "src/modules/breakout", roles: ["config", "model", "model-test"], patterns: [bareImport] },
   { dir: "src/app/shell", patterns: buildSpecific },
+  { dir: "src/app/jsx", patterns: [pagesOf("dom")] },
+  { dir: "src/app/dom", patterns: [jsxRuntime, pagesOf("jsx")] },
   { dir: "src/pages", patterns: [tickImport] },
+  { dir: "src/pages/jsx", patterns: [tickImport, pagesOf("dom")] },
+  { dir: "src/pages/dom", patterns: [tickImport, jsxRuntime, pagesOf("jsx")] },
 ];
 
 function restrict(patterns: readonly ImportPattern[]): OxlintOverride["rules"] {
@@ -78,6 +89,15 @@ const areaOverrides: OxlintOverride[] = areas.flatMap((area) =>
 
 export default defineConfig({
   base: "./",
+  build: {
+    rolldownOptions: {
+      input: {
+        landing: path.resolve(import.meta.dirname, "index.html"),
+        jsx: path.resolve(import.meta.dirname, "jsx/index.html"),
+        dom: path.resolve(import.meta.dirname, "dom/index.html"),
+      },
+    },
+  },
   fmt: {
     sortImports: true,
   },
@@ -122,7 +142,13 @@ export default defineConfig({
     },
   },
   oxc: {
-    jsx: { runtime: "classic", pragma: "h", pragmaFrag: "hf", throwIfNamespace: false },
+    jsx: {
+      runtime: "classic",
+      pragma: "h",
+      pragmaFrag: "hf",
+      development: false,
+      throwIfNamespace: false,
+    },
     jsxInject: 'import { h, hf } from "@reatom/jsx"',
   },
   resolve: {

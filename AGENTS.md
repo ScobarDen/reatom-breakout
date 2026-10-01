@@ -28,7 +28,7 @@ Read `docs/architecture.md` before touching code: levels, file roles, the frame 
 - `vp test run`: tests once (`vp test` watches).
 - `vp check`: format, lint, and types; `vp check --fix` to fix.
 - `vp run boundaries`: FEOD level check.
-- `vp dev`: the jsx build on port 5173.
+- `vp dev`: every build on port 5173, at `/jsx/` and `/dom/`.
 
 CI (`.github/workflows/ci.yml`) runs the same checks plus `vp build` as separate jobs and deploys the build to GitHub Pages from `main`. A change is done when `vp check`, `vp run boundaries`, and `vp test run` are green. The commit hook runs `vp check --fix` on staged files.
 

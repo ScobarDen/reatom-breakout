@@ -51,8 +51,8 @@ const buildSpecific: readonly ImportPattern[] = [
 ];
 const tickImport: ImportPattern = { importNames: ["advance"], regex: "modules/breakout" };
 
-function pagesOf(build: string): ImportPattern {
-  return { regex: `(^|/)pages/${build}(/|$)` };
+function pagesOf(name: string): ImportPattern {
+  return { regex: `(^|/)pages/${name}(/|$)` };
 }
 
 const areas: readonly Area[] = [
@@ -146,6 +146,7 @@ export default defineConfig({
       runtime: "classic",
       pragma: "h",
       pragmaFrag: "hf",
+      // The classic `h` pragma has no use for `__source`, and @reatom/jsx would set it as a DOM attribute.
       development: false,
       throwIfNamespace: false,
     },

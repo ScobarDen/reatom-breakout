@@ -20,10 +20,14 @@ async function buildChunks(): Promise<readonly Chunk[]> {
   return output.output.filter((file): file is Chunk => file.type === "chunk");
 }
 
-function modulesOf(chunks: readonly Chunk[], page: string): readonly string[] {
+function slashed(id: string): string {
+  return id.replaceAll("\\", "/");
+}
+
+function modulesOf(chunks: readonly Chunk[], page: "jsx" | "dom"): readonly string[] {
   const byFile = new Map(chunks.map((chunk) => [chunk.fileName, chunk]));
   const entry = chunks.find(({ facadeModuleId }) =>
-    (facadeModuleId ?? "").replaceAll("\\", "/").endsWith(`/${page}/index.html`),
+    slashed(facadeModuleId ?? "").endsWith(`/${page}/index.html`),
   );
 
   if (!entry) {
@@ -46,11 +50,11 @@ function modulesOf(chunks: readonly Chunk[], page: string): readonly string[] {
     }
   }
 
-  return [...reached].flatMap(({ moduleIds }) => moduleIds.map((id) => id.replaceAll("\\", "/")));
+  return [...reached].flatMap(({ moduleIds }) => moduleIds.map((id) => slashed(id)));
 }
 
-function carriesJsxRuntime(modules: readonly string[]): boolean {
-  return modules.some((id) => id.includes("/node_modules/@reatom/jsx/"));
+function carries(modules: readonly string[], packageName: string): boolean {
+  return modules.some((id) => id.includes(`/node_modules/${packageName}/`));
 }
 
 let chunks: readonly Chunk[] = [];
@@ -61,13 +65,13 @@ beforeAll(async () => {
 
 describe("the bundles", () => {
   test("the jsx build carries @reatom/jsx", () => {
-    expect(carriesJsxRuntime(modulesOf(chunks, "jsx"))).toBe(true);
+    expect(carries(modulesOf(chunks, "jsx"), "@reatom/jsx")).toBe(true);
   });
 
   test("the DOM build carries Reatom without @reatom/jsx", () => {
     const modules = modulesOf(chunks, "dom");
 
-    expect(modules.some((id) => id.includes("/node_modules/@reatom/core/"))).toBe(true);
-    expect(carriesJsxRuntime(modules)).toBe(false);
+    expect(carries(modules, "@reatom/core")).toBe(true);
+    expect(carries(modules, "@reatom/jsx")).toBe(false);
   });
 });

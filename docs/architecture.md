@@ -108,7 +108,7 @@ step.model.ts            новый Match
 computed                 ball, paddle, score, lives, situation, bricks[i].standing
    │
    ▼
-View                     jsx: подписки @reatom/jsx; DOM: effect на элемент — обновляют только изменившиеся атрибуты SVG
+View                     jsx: подписка @reatom/jsx на каждый атрибут; DOM: effect на элемент переписывает его атрибуты
 ```
 
 Кадр длиннее 100 мс (вкладку свернули, ноутбук уснул) обрезается, чтобы мяч не пролетел полполя за один шаг.
